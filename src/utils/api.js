@@ -115,5 +115,39 @@ export const reviewAPI = {
     apiClient.delete(`/reviews/${reviewId}`),
 }
 
+// Kakao Map API
+export const kakaoMapAPI = {
+  searchAddress: (query) =>
+    apiClient.get('/kakao/address', { params: { query } }),
+  
+  searchKeyword: (query, lat, lng, radius) =>
+    apiClient.get('/kakao/keyword', { 
+      params: { 
+        query, 
+        ...(lat && lng && { lat, lng }),
+        ...(radius && { radius })
+      } 
+    }),
+  
+  coordToAddress: (lat, lng) =>
+    apiClient.get('/kakao/coord2address', { params: { lat, lng } }),
+  
+  searchBuildingsInBounds: (swLat, swLng, neLat, neLng) =>
+    apiClient.get('/kakao/buildings-in-bounds', { 
+      params: { swLat, swLng, neLat, neLng } 
+    }),
+}
+
+// Public Data API
+export const publicDataAPI = {
+  getApartmentRentData: (lawdCd, dealYmd) =>
+    apiClient.get('/public-data/apartment-rent', { 
+      params: { 
+        lawdCd,
+        ...(dealYmd && { dealYmd })
+      } 
+    }),
+}
+
 export default apiClient
 
