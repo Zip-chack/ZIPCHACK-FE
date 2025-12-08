@@ -17,7 +17,9 @@ export const useAuthStore = defineStore("auth", () => {
         const response = await authAPI.getCurrentUser()
         user.value = response.data
       } catch (err) {
+        // 토큰이 유효하지 않으면 제거
         localStorage.removeItem("token")
+        user.value = null
       }
     }
   }
