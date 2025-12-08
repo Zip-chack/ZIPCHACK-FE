@@ -89,6 +89,15 @@ export const useBuildingStore = defineStore("building", () => {
     return buildings.value.find((b) => b.id === Number.parseInt(id)) || currentBuilding.value
   }
 
+  // 건물 추가 (중복 제거)
+  function addBuildings(newBuildings) {
+    const existingIds = new Set(buildings.value.map(b => String(b.id)))
+    const uniqueNewBuildings = newBuildings.filter(b => !existingIds.has(String(b.id)))
+    if (uniqueNewBuildings.length > 0) {
+      buildings.value = [...buildings.value, ...uniqueNewBuildings]
+    }
+  }
+
   return {
     buildings,
     currentBuilding,
@@ -98,5 +107,6 @@ export const useBuildingStore = defineStore("building", () => {
     fetchBuildingById,
     searchBuildings,
     getBuildingById,
+    addBuildings,
   }
 })
