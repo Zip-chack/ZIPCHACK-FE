@@ -77,8 +77,8 @@
             v-for="listing in recentListings"
             :key="listing.id"
             :listing="listing"
-            @click="goToListing(listing.id)"
-            @toggle-favorite="toggleFavorite(listing.id)"
+            @click="goToListing"
+            @toggle-favorite="toggleFavorite"
           />
         </div>
       </div>
