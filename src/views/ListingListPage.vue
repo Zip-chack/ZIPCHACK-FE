@@ -1,14 +1,31 @@
 <template>
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <!-- Header -->
-    <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
+    <div
+      class="flex flex-col md:flex-row md:items-center md:justify-between mb-8"
+    >
       <div>
         <h1 class="text-2xl font-bold text-gray-900">매물 찾기</h1>
-        <p class="text-gray-600 mt-1">총 {{ filteredListings.length }}개의 매물</p>
+        <p class="text-gray-600 mt-1">
+          총 {{ filteredListings.length }}개의 매물
+        </p>
       </div>
-      <router-link to="/listings/create" class="btn-primary mt-4 md:mt-0 inline-flex items-center">
-        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+      <router-link
+        to="/listings/create"
+        class="btn-primary mt-4 md:mt-0 inline-flex items-center"
+      >
+        <svg
+          class="w-5 h-5 mr-2"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 4v16m8-8H4"
+          />
         </svg>
         매물 등록
       </router-link>
@@ -51,15 +68,25 @@
         v-for="listing in filteredListings"
         :key="listing.id"
         :listing="listing"
-        @click="goToListing(listing.id)"
-        @toggle-favorite="toggleFavorite(listing.id)"
+        @click="goToListing"
+        @toggle-favorite="toggleFavorite"
       />
     </div>
 
     <!-- Empty State -->
     <div v-if="filteredListings.length === 0" class="text-center py-16">
-      <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+      <svg
+        class="w-16 h-16 text-gray-300 mx-auto mb-4"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+        />
       </svg>
       <p class="text-gray-500">검색 결과가 없습니다</p>
     </div>
@@ -67,84 +94,87 @@
 </template>
 
 <script>
-import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { useListingStore } from '@/stores/listing'
-import ListingCard from '@/components/common/ListingCard.vue'
+import { ref, computed, onMounted } from "vue";
+import { useRouter } from "vue-router";
+import { useListingStore } from "@/stores/listing";
+import ListingCard from "@/components/common/ListingCard.vue";
 
 export default {
-  name: 'ListingListPage',
+  name: "ListingListPage",
   components: {
-    ListingCard
+    ListingCard,
   },
   setup() {
-    const router = useRouter()
-    const listingStore = useListingStore()
+    const router = useRouter();
+    const listingStore = useListingStore();
 
     onMounted(async () => {
-      await listingStore.fetchListings()
-    })
+      await listingStore.fetchListings();
+    });
 
     const filters = ref({
-      search: '',
-      roomType: '',
-      priceRange: '',
-      sort: 'latest'
-    })
+      search: "",
+      roomType: "",
+      priceRange: "",
+      sort: "latest",
+    });
 
     const filteredListings = computed(() => {
-      let result = [...listingStore.listings]
+      let result = [...listingStore.listings];
 
       if (filters.value.search) {
-        const query = filters.value.search.toLowerCase()
-        result = result.filter(l =>
-          l.title.toLowerCase().includes(query) ||
-          l.building.road_address.toLowerCase().includes(query)
-        )
+        const query = filters.value.search.toLowerCase();
+        result = result.filter(
+          (l) =>
+            l.title.toLowerCase().includes(query) ||
+            l.building.road_address.toLowerCase().includes(query)
+        );
       }
 
       if (filters.value.roomType) {
-        result = result.filter(l => l.room_type === filters.value.roomType)
+        result = result.filter((l) => l.room_type === filters.value.roomType);
       }
 
       if (filters.value.priceRange) {
-        const [min, max] = filters.value.priceRange.split('-').map(Number)
+        const [min, max] = filters.value.priceRange.split("-").map(Number);
         if (max) {
-          result = result.filter(l => l.monthly_rent >= min && l.monthly_rent < max)
+          result = result.filter(
+            (l) => l.monthly_rent >= min && l.monthly_rent < max
+          );
         } else {
-          result = result.filter(l => l.monthly_rent >= 100)
+          result = result.filter((l) => l.monthly_rent >= 100);
         }
       }
 
       switch (filters.value.sort) {
-        case 'price_low':
-          result.sort((a, b) => a.monthly_rent - b.monthly_rent)
-          break
-        case 'price_high':
-          result.sort((a, b) => b.monthly_rent - a.monthly_rent)
-          break
-        case 'rating':
-          result.sort((a, b) => b.rating - a.rating)
-          break
+        case "price_low":
+          result.sort((a, b) => a.monthly_rent - b.monthly_rent);
+          break;
+        case "price_high":
+          result.sort((a, b) => b.monthly_rent - a.monthly_rent);
+          break;
+        case "rating":
+          result.sort((a, b) => b.rating - a.rating);
+          break;
       }
 
-      return result
-    })
+      return result;
+    });
 
     function goToListing(id) {
-      router.push(`/listings/${id}`)
+      router.push(`/listings/${id}`);
     }
 
     function toggleFavorite(id) {
-      listingStore.toggleFavorite(id)
+      listingStore.toggleFavorite(id);
     }
 
     return {
       filters,
       filteredListings,
       goToListing,
-      toggleFavorite
-    }
-  }
-}
+      toggleFavorite,
+    };
+  },
+};
 </script>

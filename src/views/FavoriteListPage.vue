@@ -8,8 +8,8 @@
         v-for="listing in favoriteListings"
         :key="listing.id"
         :listing="listing"
-        @click="goToListing(listing.id)"
-        @toggle-favorite="toggleFavorite(listing.id)"
+        @click="goToListing"
+        @toggle-favorite="toggleFavorite"
       />
     </div>
 
@@ -28,7 +28,7 @@
 </template>
 
 <script>
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useListingStore } from '@/stores/listing'
 import ListingCard from '@/components/common/ListingCard.vue'
@@ -42,16 +42,22 @@ export default {
     const router = useRouter()
     const listingStore = useListingStore()
 
-    const favoriteListings = computed(() =>
-      listingStore.listings.filter(l => l.is_favorite)
-    )
+    // 서버에서 찜 목록을 가져옴
+    onMounted(async () => {
+      await listingStore.fetchFavorites()
+    })
+
+    // listingStore.favorites를 사용 (서버에서 가져온 찜 목록)
+    const favoriteListings = computed(() => listingStore.favorites)
 
     function goToListing(id) {
       router.push(`/listings/${id}`)
     }
 
-    function toggleFavorite(id) {
-      listingStore.toggleFavorite(id)
+    async function toggleFavorite(id) {
+      await listingStore.toggleFavorite(id)
+      // 찜하기 후 목록 다시 불러오기
+      await listingStore.fetchFavorites()
     }
 
     return {
