@@ -97,7 +97,7 @@
 import { ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { useListingStore } from "@/stores/listing";
-import ListingCard from "@/components/common/ListingCard.vue";
+import ListingCard from "@/components/listings/ListingCard.vue";
 
 export default {
   name: "ListingListPage",
