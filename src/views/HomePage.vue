@@ -1,9 +1,7 @@
 <template>
   <div>
     <!-- Hero Section -->
-    <section
-      class="bg-gradient-to-br from-primary-500 to-primary-700 text-white py-20"
-    >
+    <section class="bg-gradient-to-br from-primary-500 to-primary-700 text-white py-20">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <h1 class="text-4xl md:text-5xl font-bold mb-6">
           실거주자 리뷰로 찾는<br />나만의 원룸
@@ -20,7 +18,9 @@
             placeholder="지역, 건물명으로 검색하세요"
             class="flex-1 px-4 py-3 text-gray-900 focus:outline-none rounded-lg"
           />
-          <button @click="handleSearch" class="btn-primary px-8">검색</button>
+          <button @click="handleSearch" class="btn-primary px-8">
+            검색
+          </button>
         </div>
       </div>
     </section>
@@ -31,17 +31,16 @@
         <h2 class="text-3xl font-bold text-center text-gray-900 mb-12">
           ZIP-Chack만의 특별함
         </h2>
+
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div class="text-center p-6">
-            <div
-              class="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4"
-            >
-              <svg
-                class="w-8 h-8 text-primary-500"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
+
+          <!-- 실거주자 리뷰 → /listings -->
+          <div
+            class="text-center p-6 cursor-pointer transition shadow hover:shadow-lg rounded-xl border hover:bg-primary-50"
+            @click="goTo('/listings')"
+          >
+            <div class="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg class="w-8 h-8 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                   stroke-linecap="round"
                   stroke-linejoin="round"
@@ -50,23 +49,17 @@
                 />
               </svg>
             </div>
-            <h3 class="text-xl font-semibold text-gray-900 mb-2">
-              실거주자 리뷰
-            </h3>
-            <p class="text-gray-600">
-              실제 거주 경험을 바탕으로 한 솔직한 리뷰를 확인하세요
-            </p>
+            <h3 class="text-xl font-semibold text-gray-900 mb-2">실거주자 리뷰</h3>
+            <p class="text-gray-600">실제 거주 경험을 바탕으로 한 솔직한 리뷰를 확인하세요</p>
           </div>
-          <div class="text-center p-6">
-            <div
-              class="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4"
-            >
-              <svg
-                class="w-8 h-8 text-primary-500"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
+
+          <!-- 지도 기반 검색 → /map -->
+          <div
+            class="text-center p-6 cursor-pointer transition shadow hover:shadow-lg rounded-xl border hover:bg-primary-50"
+            @click="goTo('/map')"
+          >
+            <div class="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg class="w-8 h-8 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                   stroke-linecap="round"
                   stroke-linejoin="round"
@@ -75,23 +68,17 @@
                 />
               </svg>
             </div>
-            <h3 class="text-xl font-semibold text-gray-900 mb-2">
-              지도 기반 검색
-            </h3>
-            <p class="text-gray-600">
-              원하는 지역의 매물을 지도에서 한눈에 확인하세요
-            </p>
+            <h3 class="text-xl font-semibold text-gray-900 mb-2">지도 기반 검색</h3>
+            <p class="text-gray-600">원하는 지역의 매물을 지도에서 한눈에 확인하세요</p>
           </div>
-          <div class="text-center p-6">
-            <div
-              class="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4"
-            >
-              <svg
-                class="w-8 h-8 text-primary-500"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
+
+          <!-- 실거래가 정보 → /transactions -->
+          <div
+            class="text-center p-6 cursor-pointer transition shadow hover:shadow-lg rounded-xl border hover:bg-primary-50"
+            @click="goTo('/transactions')"
+          >
+            <div class="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg class="w-8 h-8 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                   stroke-linecap="round"
                   stroke-linejoin="round"
@@ -100,13 +87,10 @@
                 />
               </svg>
             </div>
-            <h3 class="text-xl font-semibold text-gray-900 mb-2">
-              실거래가 정보
-            </h3>
-            <p class="text-gray-600">
-              해당 건물의 과거 실거래가 정보를 확인하세요
-            </p>
+            <h3 class="text-xl font-semibold text-gray-900 mb-2">실거래가 정보</h3>
+            <p class="text-gray-600">해당 건물의 과거 실거래가 정보를 확인하세요</p>
           </div>
+
         </div>
       </div>
     </section>
@@ -116,20 +100,18 @@
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center mb-8">
           <h2 class="text-2xl font-bold text-gray-900">최근 등록 매물</h2>
-          <router-link
-            to="/listings"
-            class="text-primary-500 hover:text-primary-600 font-medium"
-          >
-            전체보기 &rarr;
+          <router-link to="/listings" class="text-primary-500 hover:text-primary-600 font-medium">
+            전체보기 →
           </router-link>
         </div>
+
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
           <ListingCard
             v-for="listing in recentListings"
             :key="listing.id"
             :listing="listing"
-            @click="goToListing"
-            @toggle-favorite="toggleFavorite"
+            @click="goToListing(listing.id)"
+            @toggle-favorite="toggleFavorite(listing.id)"
           />
         </div>
       </div>
@@ -162,46 +144,51 @@
 </template>
 
 <script>
-import { ref, computed, onMounted } from "vue";
-import { useRouter } from "vue-router";
-import { useListingStore } from "@/stores/listing";
-import ListingCard from "@/components/listings/ListingCard.vue";
+import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useListingStore } from '@/stores/listing'
+import ListingCard from '@/components/listings/ListingCard.vue'
 
 export default {
-  name: "HomePage",
+  name: 'HomePage',
   components: {
-    ListingCard,
+    ListingCard
   },
   setup() {
-    const router = useRouter();
-    const listingStore = useListingStore();
-    const searchQuery = ref("");
+    const router = useRouter()
+    const listingStore = useListingStore()
+    const searchQuery = ref('')
 
-    const recentListings = computed(() => listingStore.listings.slice(0, 3));
+    const recentListings = computed(() => listingStore.listings.slice(0, 3))
 
     onMounted(async () => {
-      await listingStore.fetchListings();
-    });
+      await listingStore.fetchListings()
+    })
 
     function handleSearch() {
-      router.push({ path: "/listings", query: { q: searchQuery.value } });
+      router.push({ path: '/listings', query: { q: searchQuery.value } })
+    }
+
+    function goTo(path) {
+      router.push(path)
     }
 
     function goToListing(id) {
-      router.push(`/listings/${id}`);
+      router.push(`/listings/${id}`)
     }
 
     function toggleFavorite(id) {
-      listingStore.toggleFavorite(id);
+      listingStore.toggleFavorite(id)
     }
 
     return {
       searchQuery,
       recentListings,
       handleSearch,
+      goTo,
       goToListing,
-      toggleFavorite,
-    };
-  },
-};
+      toggleFavorite
+    }
+  }
+}
 </script>
