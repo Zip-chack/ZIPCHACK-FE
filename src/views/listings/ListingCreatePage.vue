@@ -19,8 +19,50 @@
               @input="searchBuildings"
             />
           </div>
+
+          <!-- 선택된 건물 표시 -->
           <div
-            v-if="searchedBuildings.length > 0"
+            v-if="form.selectedBuilding"
+            class="mb-4 p-4 bg-primary-50 border border-primary-200 rounded-lg"
+          >
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="font-medium text-gray-900">
+                  {{ form.selectedBuilding.name }}
+                </p>
+                <p class="text-sm text-gray-500">
+                  {{ form.selectedBuilding.road_address }}
+                </p>
+              </div>
+              <button
+                type="button"
+                @click="
+                  form.selectedBuilding = null;
+                  form.buildingSearch = '';
+                "
+                class="text-gray-400 hover:text-gray-600"
+              >
+                <svg
+                  class="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- 건물 검색 결과 -->
+
+          <div
+            v-if="searchedBuildings.length > 0 && !form.selectedBuilding"
             class="border rounded-lg divide-y"
           >
             <button
@@ -179,6 +221,7 @@ import { ref, computed, onMounted } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useBuildingStore } from "@/stores/building";
 import { useListingStore } from "@/stores/listing";
+import { useAuthStore } from "@/stores/auth";
 import { buildingAPI } from "@/utils/api";
 
 export default {
@@ -188,6 +231,7 @@ export default {
     const route = useRoute();
     const buildingStore = useBuildingStore();
     const listingStore = useListingStore();
+    const authStore = useAuthStore();
 
     const form = ref({
       buildingSearch: "",
@@ -228,17 +272,40 @@ export default {
       const buildingId = route.query.buildingId;
       if (buildingId) {
         try {
-          const response = await buildingAPI.getBuildingById(buildingId);
+          // buildingId를 Number로 변환
+          const buildingIdNum = Number(buildingId);
+          if (isNaN(buildingIdNum)) {
+            console.error("유효하지 않은 buildingId:", buildingId);
+            return;
+          }
+
+          const response = await buildingAPI.getBuildingById(buildingIdNum);
           const building = response.data;
-          form.value.selectedBuilding = {
+
+          if (!building || !building.id) {
+            console.error("건물 정보가 올바르지 않습니다:", building);
+            return;
+          }
+
+          const selectedBuilding = {
             id: building.id,
             name: building.name,
-            road_address: building.roadAddress,
+            road_address: building.roadAddress || building.roadAddress || "",
           };
+
+          form.value.selectedBuilding = selectedBuilding;
           // 건물 검색 필드에도 표시
-          form.value.buildingSearch = `${building.name} ${building.roadAddress}`;
+          form.value.buildingSearch = `${building.name} ${
+            building.roadAddress || ""
+          }`.trim();
+          // searchedBuildings에도 추가하여 UI에 표시
+          searchedBuildings.value = [selectedBuilding];
         } catch (error) {
           console.error("건물 정보를 불러오는데 실패했습니다:", error);
+          alert(
+            "건물 정보를 불러오는데 실패했습니다: " +
+              (error.response?.data?.message || error.message)
+          );
         }
       }
     });
@@ -248,8 +315,29 @@ export default {
     }
 
     async function handleSubmit() {
-      if (!form.value.selectedBuilding) {
+      // 로그인 체크
+      const token = localStorage.getItem("token");
+      if (!token || !authStore.isLoggedIn) {
+        alert("매물을 등록하려면 로그인이 필요합니다.");
+        router.push("/login");
+        return;
+      }
+
+      if (!form.value.selectedBuilding || !form.value.selectedBuilding.id) {
         alert("건물을 선택해주세요.");
+        return;
+      }
+
+      // 필수 필드 검증
+      if (
+        !form.value.title ||
+        !form.value.roomType ||
+        !form.value.deposit ||
+        !form.value.monthlyRent ||
+        !form.value.area ||
+        form.value.floor === null
+      ) {
+        alert("모든 필수 항목을 입력해주세요.");
         return;
       }
 
@@ -257,27 +345,46 @@ export default {
         const listingData = {
           title: form.value.title,
           roomType: form.value.roomType,
-          deposit: form.value.deposit,
-          monthlyRent: form.value.monthlyRent,
-          maintenanceFee: form.value.maintenanceFee || 0,
-          areaM2: form.value.area,
-          floor: form.value.floor,
+          deposit: Number(form.value.deposit),
+          monthlyRent: Number(form.value.monthlyRent),
+          maintenanceFee: form.value.maintenanceFee
+            ? Number(form.value.maintenanceFee)
+            : 0,
+          areaM2: Number(form.value.area),
+          floor: Number(form.value.floor),
           image: "",
           building: {
-            id: form.value.selectedBuilding.id,
+            id: Number(form.value.selectedBuilding.id),
           },
         };
+
+        console.log("매물 등록 데이터:", listingData);
+        console.log("선택된 건물:", form.value.selectedBuilding);
+        console.log("건물 ID:", form.value.selectedBuilding?.id);
+        console.log("건물 ID 타입:", typeof form.value.selectedBuilding?.id);
 
         const result = await listingStore.createListing(listingData);
         if (result.success) {
           alert("매물이 등록되었습니다!");
-          router.push("/listings");
+          // buildingId가 있었으면 해당 빌딩 상세 페이지로 이동
+          const buildingId = route.query.buildingId;
+          if (buildingId) {
+            router.push(`/buildings/${buildingId}`);
+          } else {
+            router.push("/listings");
+          }
         } else {
           alert(result.error || "매물 등록에 실패했습니다.");
         }
       } catch (err) {
         console.error("매물 등록 에러:", err);
-        alert("매물 등록에 실패했습니다.");
+        console.error("에러 상세:", err.response?.data);
+        const errorMessage =
+          err.response?.data?.error ||
+          err.response?.data?.message ||
+          err.message ||
+          "매물 등록에 실패했습니다.";
+        alert(errorMessage);
       }
     }
 
