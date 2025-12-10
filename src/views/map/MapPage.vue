@@ -93,12 +93,48 @@
             >
           </div>
 
-          <router-link
-            :to="`/buildings/${selectedBuilding.id}/review`"
-            class="btn-primary w-full text-center block"
+          <div class="flex gap-2 mb-4">
+            <router-link
+              :to="`/buildings/${selectedBuilding.id}`"
+              class="btn-primary flex-1 text-center block"
+            >
+              상세보기
+            </router-link>
+            <router-link
+              :to="`/buildings/${selectedBuilding.id}/review`"
+              class="btn-secondary flex-1 text-center block"
+            >
+              리뷰 작성
+            </router-link>
+          </div>
+
+          <!-- Building Listings -->
+          <div v-if="buildingListings.length > 0" class="mt-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">
+              등록된 매물 ({{ buildingListings.length }}개)
+            </h3>
+            <div class="space-y-4">
+              <ListingCard
+                v-for="listing in buildingListings"
+                :key="listing.id"
+                :listing="listing"
+                @click="goToListing"
+                @toggle-favorite="toggleFavorite"
+              />
+            </div>
+          </div>
+          <div
+            v-else-if="!isLoadingListings"
+            class="mt-6 text-center py-8 text-gray-500"
           >
-            리뷰 작성하기
-          </router-link>
+            등록된 매물이 없습니다.
+          </div>
+          <div
+            v-if="isLoadingListings"
+            class="mt-6 text-center py-8 text-gray-500"
+          >
+            매물 목록을 불러오는 중...
+          </div>
         </div>
 
         <div v-else class="divide-y divide-gray-100">
@@ -136,17 +172,25 @@
 
 <script>
 import { ref, computed, onMounted, onUnmounted, watch } from "vue";
+import { useRouter } from "vue-router";
 import { useBuildingStore } from "@/stores/building";
-import { kakaoMapAPI, publicDataAPI } from "@/utils/api";
+import { kakaoMapAPI, publicDataAPI, buildingAPI } from "@/utils/api";
+import ListingCard from "@/components/listings/ListingCard.vue";
 
 export default {
   name: "MapPage",
+  components: {
+    ListingCard,
+  },
   setup() {
     const buildingStore = useBuildingStore();
+    const router = useRouter();
 
     const searchQuery = ref("");
     const viewMode = ref("map");
     const selectedBuilding = ref(null);
+    const buildingListings = ref([]);
+    const isLoadingListings = ref(false);
     const mapError = ref(null);
     const isLoadingBuildings = ref(false);
     const isLoadingRentData = ref(false);
@@ -376,8 +420,10 @@ export default {
       );
     });
 
-    function selectBuilding(building) {
+    async function selectBuilding(building) {
       selectedBuilding.value = building;
+      buildingListings.value = [];
+
       if (map && building) {
         const moveLatLon = new window.kakao.maps.LatLng(
           building.lat,
@@ -385,6 +431,119 @@ export default {
         );
         map.setCenter(moveLatLon);
         map.setLevel(3);
+      }
+
+      // Building ID 확인 및 처리
+      let buildingId = building.id;
+
+      // ID가 숫자가 아니거나 문자열인 경우 (카카오맵에서 가져온 경우)
+      if (
+        !buildingId ||
+        typeof buildingId !== "number" ||
+        String(buildingId).startsWith("kakao_")
+      ) {
+        // Building을 검색하거나 생성
+        buildingId = await findOrCreateBuilding(building);
+      } else {
+        // 숫자 ID인 경우 DB에 존재하는지 확인
+        try {
+          await buildingAPI.getBuildingById(buildingId);
+        } catch (error) {
+          // DB에 없으면 생성
+          buildingId = await findOrCreateBuilding(building);
+        }
+      }
+
+      // Building ID가 있으면 매물 목록 조회
+      if (buildingId) {
+        // selectedBuilding의 ID를 업데이트
+        selectedBuilding.value = { ...selectedBuilding.value, id: buildingId };
+        await loadBuildingListings(buildingId);
+      }
+    }
+
+    // Building을 찾거나 생성하는 함수
+    async function findOrCreateBuilding(building) {
+      try {
+        const buildingName = building.name || "";
+        const address = building.road_address || building.roadAddress || "";
+
+        // Building 검색
+        const searchQuery = `${buildingName} ${address}`.trim();
+        if (searchQuery) {
+          const searchResponse = await buildingAPI.searchBuildings(searchQuery);
+
+          // 검색 결과가 있으면 첫 번째 결과 사용
+          if (searchResponse.data && searchResponse.data.length > 0) {
+            // 주소와 이름이 비슷한 Building 찾기
+            const matchedBuilding = searchResponse.data.find(
+              (b) =>
+                b.name === buildingName &&
+                (b.roadAddress === address ||
+                  b.roadAddress?.includes(address) ||
+                  address.includes(b.roadAddress))
+            );
+            if (matchedBuilding) {
+              return matchedBuilding.id;
+            }
+            // 정확히 일치하는 것이 없으면 첫 번째 결과 사용
+            return searchResponse.data[0].id;
+          }
+        }
+
+        // Building이 없으면 생성
+        const buildingData = {
+          name: buildingName || "건물",
+          roadAddress: address,
+          lat: building.lat,
+          lng: building.lng,
+          builtYear: building.built_year || building.builtYear || null,
+        };
+
+        const createResponse = await buildingAPI.createBuilding(buildingData);
+        return createResponse.data.id;
+      } catch (error) {
+        console.error("Building 찾기/생성 실패:", error);
+        return null;
+      }
+    }
+
+    async function loadBuildingListings(buildingId) {
+      try {
+        isLoadingListings.value = true;
+        const response = await buildingAPI.getBuildingListings(buildingId);
+        buildingListings.value = response.data.map((listing) => ({
+          ...listing,
+          is_favorite: listing.isFavorite ?? listing.is_favorite ?? false,
+          isFavorite: listing.isFavorite ?? listing.is_favorite ?? false,
+        }));
+      } catch (error) {
+        console.error("매물 목록 조회 실패:", error);
+        buildingListings.value = [];
+      } finally {
+        isLoadingListings.value = false;
+      }
+    }
+
+    function goToListing(id) {
+      router.push(`/listings/${id}`);
+    }
+
+    async function toggleFavorite(id) {
+      // 찜하기 기능은 listing store를 사용하거나 직접 API 호출
+      // 여기서는 간단하게 router로 이동하도록 처리
+      // 실제로는 listing store의 toggleFavorite를 사용하는 것이 좋습니다
+      try {
+        const { listingAPI } = await import("@/utils/api");
+        await listingAPI.toggleFavorite(id);
+        // 목록 업데이트
+        const listing = buildingListings.value.find((l) => l.id === id);
+        if (listing) {
+          listing.is_favorite = !listing.is_favorite;
+          listing.isFavorite = !listing.isFavorite;
+        }
+      } catch (error) {
+        console.error("찜하기 실패:", error);
       }
     }
 
@@ -459,8 +618,10 @@ export default {
               content: content,
             });
 
-            window.kakao.maps.event.addListener(marker, "click", () => {
+            window.kakao.maps.event.addListener(marker, "click", async () => {
               infowindow.open(map, marker);
+              // Building 찾기 또는 생성 후 상세 페이지로 이동
+              await handleRentDataClick(rent);
             });
 
             rentMarkers.push(marker);
@@ -479,6 +640,45 @@ export default {
       }
     }
 
+    // 실거래가 데이터 클릭 시 Building 찾기 또는 생성
+    async function handleRentDataClick(rent) {
+      try {
+        const buildingName = rent.apartmentName || "아파트";
+        const address = rent.roadAddress || rent.jibunAddress || "";
+
+        // Building 검색
+        const searchQuery = `${buildingName} ${address}`;
+        const searchResponse = await buildingAPI.searchBuildings(searchQuery);
+
+        let buildingId = null;
+
+        // 검색 결과가 있으면 첫 번째 결과 사용
+        if (searchResponse.data && searchResponse.data.length > 0) {
+          buildingId = searchResponse.data[0].id;
+        } else {
+          // Building이 없으면 생성
+          const buildingData = {
+            name: buildingName,
+            roadAddress: address,
+            lat: rent.lat,
+            lng: rent.lng,
+            builtYear: rent.buildYear ? parseInt(rent.buildYear) : null,
+          };
+
+          const createResponse = await buildingAPI.createBuilding(buildingData);
+          buildingId = createResponse.data.id;
+        }
+
+        // Building 상세 페이지로 이동
+        if (buildingId) {
+          router.push(`/buildings/${buildingId}`);
+        }
+      } catch (error) {
+        console.error("Building 찾기/생성 실패:", error);
+        alert("건물 정보를 불러오는데 실패했습니다.");
+      }
+    }
+
     onUnmounted(() => {
       // 마커 제거
       markers.forEach((marker) => marker.setMap(null));
@@ -491,9 +691,13 @@ export default {
       searchQuery,
       viewMode,
       selectedBuilding,
+      buildingListings,
+      isLoadingListings,
       buildings,
       filteredBuildings,
       selectBuilding,
+      goToListing,
+      toggleFavorite,
       lawdCd,
       isLoadingRentData,
       loadApartmentRentData,
