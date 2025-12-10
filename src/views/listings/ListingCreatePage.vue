@@ -8,7 +8,9 @@
         <h2 class="text-lg font-semibold text-gray-900 mb-4">건물 정보</h2>
         <div class="space-y-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">건물 검색</label>
+            <label class="block text-sm font-medium text-gray-700 mb-2"
+              >건물 검색</label
+            >
             <input
               v-model="form.buildingSearch"
               type="text"
@@ -17,21 +19,35 @@
               @input="searchBuildings"
             />
           </div>
-          <div v-if="searchedBuildings.length > 0" class="border rounded-lg divide-y">
+          <div
+            v-if="searchedBuildings.length > 0"
+            class="border rounded-lg divide-y"
+          >
             <button
               v-for="building in searchedBuildings"
               :key="building.id"
               type="button"
               @click="selectBuilding(building)"
               class="w-full p-4 text-left hover:bg-gray-50 flex justify-between items-center"
-              :class="{ 'bg-primary-50': form.selectedBuilding?.id === building.id }"
+              :class="{
+                'bg-primary-50': form.selectedBuilding?.id === building.id,
+              }"
             >
               <div>
                 <p class="font-medium text-gray-900">{{ building.name }}</p>
                 <p class="text-sm text-gray-500">{{ building.road_address }}</p>
               </div>
-              <svg v-if="form.selectedBuilding?.id === building.id" class="w-5 h-5 text-primary-500" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+              <svg
+                v-if="form.selectedBuilding?.id === building.id"
+                class="w-5 h-5 text-primary-500"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                  clip-rule="evenodd"
+                />
               </svg>
             </button>
           </div>
@@ -43,7 +59,9 @@
         <h2 class="text-lg font-semibold text-gray-900 mb-4">매물 정보</h2>
         <div class="space-y-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">제목</label>
+            <label class="block text-sm font-medium text-gray-700 mb-2"
+              >제목</label
+            >
             <input
               v-model="form.title"
               type="text"
@@ -55,7 +73,9 @@
 
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">방 종류</label>
+              <label class="block text-sm font-medium text-gray-700 mb-2"
+                >방 종류</label
+              >
               <select v-model="form.roomType" class="input" required>
                 <option value="">선택</option>
                 <option value="원룸">원룸</option>
@@ -64,7 +84,9 @@
               </select>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">층수</label>
+              <label class="block text-sm font-medium text-gray-700 mb-2"
+                >층수</label
+              >
               <input
                 v-model.number="form.floor"
                 type="number"
@@ -76,7 +98,9 @@
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">면적 (m2)</label>
+            <label class="block text-sm font-medium text-gray-700 mb-2"
+              >면적 (m2)</label
+            >
             <input
               v-model.number="form.area"
               type="number"
@@ -93,7 +117,9 @@
         <h2 class="text-lg font-semibold text-gray-900 mb-4">가격 정보</h2>
         <div class="grid grid-cols-3 gap-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">보증금 (만원)</label>
+            <label class="block text-sm font-medium text-gray-700 mb-2"
+              >보증금 (만원)</label
+            >
             <input
               v-model.number="form.deposit"
               type="number"
@@ -103,7 +129,9 @@
             />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">월세 (만원)</label>
+            <label class="block text-sm font-medium text-gray-700 mb-2"
+              >월세 (만원)</label
+            >
             <input
               v-model.number="form.monthlyRent"
               type="number"
@@ -113,7 +141,9 @@
             />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">관리비 (만원)</label>
+            <label class="block text-sm font-medium text-gray-700 mb-2"
+              >관리비 (만원)</label
+            >
             <input
               v-model.number="form.maintenanceFee"
               type="number"
@@ -145,60 +175,82 @@
 </template>
 
 <script>
-import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { useBuildingStore } from '@/stores/building'
-import { useListingStore } from '@/stores/listing'
+import { ref, computed, onMounted } from "vue";
+import { useRouter, useRoute } from "vue-router";
+import { useBuildingStore } from "@/stores/building";
+import { useListingStore } from "@/stores/listing";
+import { buildingAPI } from "@/utils/api";
 
 export default {
-  name: 'ListingCreatePage',
+  name: "ListingCreatePage",
   setup() {
-    const router = useRouter()
-    const buildingStore = useBuildingStore()
-    const listingStore = useListingStore()
+    const router = useRouter();
+    const route = useRoute();
+    const buildingStore = useBuildingStore();
+    const listingStore = useListingStore();
 
     const form = ref({
-      buildingSearch: '',
+      buildingSearch: "",
       selectedBuilding: null,
-      title: '',
-      roomType: '',
+      title: "",
+      roomType: "",
       floor: null,
       area: null,
       deposit: null,
       monthlyRent: null,
       maintenanceFee: null,
-      description: ''
-    })
+      description: "",
+    });
 
-    const searchedBuildings = ref([])
+    const searchedBuildings = ref([]);
 
     async function searchBuildings() {
       if (!form.value.buildingSearch) {
-        searchedBuildings.value = []
-        return
+        searchedBuildings.value = [];
+        return;
       }
       try {
-        const result = await buildingStore.searchBuildings(form.value.buildingSearch)
+        const result = await buildingStore.searchBuildings(
+          form.value.buildingSearch
+        );
         if (result.success) {
-          searchedBuildings.value = buildingStore.buildings
+          searchedBuildings.value = buildingStore.buildings;
         }
       } catch (err) {
-        console.error('건물 검색 에러:', err)
+        console.error("건물 검색 에러:", err);
       }
     }
 
     onMounted(async () => {
-      await buildingStore.fetchBuildings()
-    })
+      await buildingStore.fetchBuildings();
+
+      // buildingId 쿼리 파라미터가 있으면 해당 건물을 자동으로 선택
+      const buildingId = route.query.buildingId;
+      if (buildingId) {
+        try {
+          const response = await buildingAPI.getBuildingById(buildingId);
+          const building = response.data;
+          form.value.selectedBuilding = {
+            id: building.id,
+            name: building.name,
+            road_address: building.roadAddress,
+          };
+          // 건물 검색 필드에도 표시
+          form.value.buildingSearch = `${building.name} ${building.roadAddress}`;
+        } catch (error) {
+          console.error("건물 정보를 불러오는데 실패했습니다:", error);
+        }
+      }
+    });
 
     function selectBuilding(building) {
-      form.value.selectedBuilding = building
+      form.value.selectedBuilding = building;
     }
 
     async function handleSubmit() {
       if (!form.value.selectedBuilding) {
-        alert('건물을 선택해주세요.')
-        return
+        alert("건물을 선택해주세요.");
+        return;
       }
 
       try {
@@ -210,22 +262,22 @@ export default {
           maintenanceFee: form.value.maintenanceFee || 0,
           areaM2: form.value.area,
           floor: form.value.floor,
-          image: '',
+          image: "",
           building: {
-            id: form.value.selectedBuilding.id
-          }
-        }
+            id: form.value.selectedBuilding.id,
+          },
+        };
 
-        const result = await listingStore.createListing(listingData)
+        const result = await listingStore.createListing(listingData);
         if (result.success) {
-          alert('매물이 등록되었습니다!')
-          router.push('/listings')
+          alert("매물이 등록되었습니다!");
+          router.push("/listings");
         } else {
-          alert(result.error || '매물 등록에 실패했습니다.')
+          alert(result.error || "매물 등록에 실패했습니다.");
         }
       } catch (err) {
-        console.error('매물 등록 에러:', err)
-        alert('매물 등록에 실패했습니다.')
+        console.error("매물 등록 에러:", err);
+        alert("매물 등록에 실패했습니다.");
       }
     }
 
@@ -234,8 +286,8 @@ export default {
       searchedBuildings,
       selectBuilding,
       searchBuildings,
-      handleSubmit
-    }
-  }
-}
+      handleSubmit,
+    };
+  },
+};
 </script>
