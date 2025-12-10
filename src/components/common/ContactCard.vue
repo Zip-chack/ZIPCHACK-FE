@@ -1,5 +1,5 @@
 <template>
-  <div class="card p-6 sticky top-24">
+  <div class="card p-6">
     <h3 class="font-semibold text-gray-900 mb-4">연락하기</h3>
     <button class="btn-primary w-full mb-3" @click="handlePhoneCall">
       전화 문의
