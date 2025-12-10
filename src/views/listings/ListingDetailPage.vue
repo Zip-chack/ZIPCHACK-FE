@@ -61,7 +61,12 @@
 
         <!-- Nearby Commerce Info -->
         <div class="card p-6">
-          <h3 class="font-semibold text-gray-900 mb-4">주변 상권</h3>
+          <h3 class="font-semibold text-gray-900 mb-4">
+            주변 상권
+            <span class="text-sm font-normal text-gray-500 ml-2"
+              >(근 {{ commerceRadius }}m 내)</span
+            >
+          </h3>
           <div v-if="isLoadingCommerce" class="text-center py-4">
             <p class="text-gray-500 text-sm">상권 정보를 불러오는 중...</p>
           </div>
@@ -128,6 +133,7 @@ export default {
     const reviews = ref([]);
     const nearbyCommerce = ref({});
     const isLoadingCommerce = ref(false);
+    const commerceRadius = ref(500); // 반경 (미터)
 
     const commerceItems = [
       { key: "convenienceStore", label: "편의점", icon: "🏪" },
@@ -173,7 +179,7 @@ export default {
           const response = await kakaoMapAPI.getNearbyCommerceInfo(
             listing.value.building.lat,
             listing.value.building.lng,
-            500 // 반경 500m
+            commerceRadius.value
           );
           nearbyCommerce.value = response.data;
         } catch (err) {
@@ -194,6 +200,7 @@ export default {
       nearbyCommerce,
       isLoadingCommerce,
       commerceItems,
+      commerceRadius,
       toggleFavorite,
     };
   },
