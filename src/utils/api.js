@@ -127,6 +127,11 @@ export const kakaoMapAPI = {
     apiClient.get("/kakao/buildings-in-bounds", {
       params: { swLat, swLng, neLat, neLng },
     }),
+
+  getNearbyCommerceInfo: (lat, lng, radius) =>
+    apiClient.get("/kakao/nearby-commerce", {
+      params: { lat, lng, ...(radius && { radius }) },
+    }),
 };
 
 // Public Data API
