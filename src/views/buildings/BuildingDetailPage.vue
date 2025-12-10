@@ -95,27 +95,13 @@
           </dl>
         </div>
 
-        <!-- Nearby POI -->
-        <div class="card p-6">
-          <h3 class="font-semibold text-gray-900 mb-4">주변 시설</h3>
-          <ul class="space-y-3">
-            <li
-              v-for="poi in nearbyPOIs"
-              :key="poi.id"
-              class="flex items-center justify-between text-sm"
-            >
-              <div class="flex items-center">
-                <span
-                  class="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center mr-3"
-                >
-                  <span class="text-primary-600">{{ poi.icon }}</span>
-                </span>
-                <span class="text-gray-900">{{ poi.name }}</span>
-              </div>
-              <span class="text-gray-500">{{ poi.distance }}m</span>
-            </li>
-          </ul>
-        </div>
+        <!-- Nearby Commerce Info -->
+        <NearbyCommerceInfo
+          v-if="building && building.lat && building.lng"
+          :lat="building.lat"
+          :lng="building.lng"
+          :radius="500"
+        />
       </div>
     </div>
 
@@ -135,11 +121,13 @@ import { useRoute } from "vue-router";
 import { useBuildingStore } from "@/stores/building";
 import { reviewAPI } from "@/utils/api";
 import ReviewCard from "@/components/common/ReviewCard.vue";
+import NearbyCommerceInfo from "@/components/common/NearbyCommerceInfo.vue";
 
 export default {
   name: "BuildingDetailPage",
   components: {
     ReviewCard,
+    NearbyCommerceInfo,
   },
   setup() {
     const route = useRoute();
@@ -170,17 +158,9 @@ export default {
       }
     });
 
-    const nearbyPOIs = [
-      { id: 1, name: "신촌역 2호선", distance: 350, icon: "🚇" },
-      { id: 2, name: "GS25 편의점", distance: 50, icon: "🏪" },
-      { id: 3, name: "올리브영", distance: 200, icon: "💊" },
-      { id: 4, name: "스타벅스", distance: 150, icon: "☕" },
-    ];
-
     return {
       building,
       reviews,
-      nearbyPOIs,
     };
   },
 };
