@@ -68,6 +68,14 @@
             </div>
           </div>
         </div>
+
+        <!-- Commerce Analysis -->
+        <CommerceAnalysis
+          v-if="building && building.lat && building.lng"
+          :lat="building.lat"
+          :lng="building.lng"
+          :radius="500"
+        />
       </div>
 
       <!-- Sidebar -->
@@ -107,6 +115,7 @@ import ReviewCard from "@/components/common/ReviewCard.vue";
 import NearbyCommerceInfo from "@/components/common/NearbyCommerceInfo.vue";
 import ContactCard from "@/components/common/ContactCard.vue";
 import BuildingInfoCard from "@/components/common/BuildingInfoCard.vue";
+import CommerceAnalysis from "@/components/common/CommerceAnalysis.vue";
 
 export default {
   name: "BuildingDetailPage",
@@ -115,6 +124,7 @@ export default {
     NearbyCommerceInfo,
     ContactCard,
     BuildingInfoCard,
+    CommerceAnalysis,
   },
   setup() {
     const route = useRoute();
