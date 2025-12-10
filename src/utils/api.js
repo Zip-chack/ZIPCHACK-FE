@@ -132,6 +132,11 @@ export const kakaoMapAPI = {
     apiClient.get("/kakao/nearby-commerce", {
       params: { lat, lng, ...(radius && { radius }) },
     }),
+
+  getCommerceReport: (lat, lng, radius) =>
+    apiClient.get("/commerce-analysis/report", {
+      params: { lat, lng, ...(radius && { radius }) },
+    }),
 };
 
 // Public Data API
