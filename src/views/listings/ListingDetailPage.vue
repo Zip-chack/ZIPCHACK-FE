@@ -34,30 +34,10 @@
       <!-- Sidebar -->
       <div class="space-y-6">
         <!-- Contact Card -->
-        <div class="card p-6 sticky top-24">
-          <h3 class="font-semibold text-gray-900 mb-4">연락하기</h3>
-          <button class="btn-primary w-full mb-3">전화 문의</button>
-          <button class="btn-secondary w-full">메시지 보내기</button>
-        </div>
+        <ContactCard />
 
         <!-- Building Info -->
-        <div class="card p-6">
-          <h3 class="font-semibold text-gray-900 mb-4">건물 정보</h3>
-          <dl class="space-y-3 text-sm">
-            <div class="flex justify-between">
-              <dt class="text-gray-500">건물명</dt>
-              <dd class="font-medium text-gray-900">
-                {{ listing.building.name }}
-              </dd>
-            </div>
-            <div class="flex justify-between">
-              <dt class="text-gray-500">주소</dt>
-              <dd class="font-medium text-gray-900 text-right">
-                {{ listing.building.road_address }}
-              </dd>
-            </div>
-          </dl>
-        </div>
+        <BuildingInfoCard :building="listing.building" />
 
         <!-- Nearby Commerce Info -->
         <NearbyCommerceInfo
@@ -92,6 +72,8 @@ import { reviewAPI } from "@/utils/api";
 import ReviewCard from "@/components/common/ReviewCard.vue";
 import ListingBasicInfo from "@/components/listings/ListingBasicInfo.vue";
 import NearbyCommerceInfo from "@/components/common/NearbyCommerceInfo.vue";
+import ContactCard from "@/components/common/ContactCard.vue";
+import BuildingInfoCard from "@/components/common/BuildingInfoCard.vue";
 
 export default {
   name: "ListingDetailPage",
@@ -99,6 +81,8 @@ export default {
     ReviewCard,
     ListingBasicInfo,
     NearbyCommerceInfo,
+    ContactCard,
+    BuildingInfoCard,
   },
   setup() {
     const route = useRoute();

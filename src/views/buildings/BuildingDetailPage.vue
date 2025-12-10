@@ -72,28 +72,11 @@
 
       <!-- Sidebar -->
       <div class="space-y-6">
+        <!-- Contact Card -->
+        <ContactCard />
+
         <!-- Building Info -->
-        <div class="card p-6">
-          <h3 class="font-semibold text-gray-900 mb-4">건물 정보</h3>
-          <dl class="space-y-3 text-sm">
-            <div class="flex justify-between">
-              <dt class="text-gray-500">건물명</dt>
-              <dd class="font-medium text-gray-900">{{ building.name }}</dd>
-            </div>
-            <div class="flex justify-between">
-              <dt class="text-gray-500">주소</dt>
-              <dd class="font-medium text-gray-900 text-right">
-                {{ building.road_address }}
-              </dd>
-            </div>
-            <div v-if="building.built_year" class="flex justify-between">
-              <dt class="text-gray-500">건축년도</dt>
-              <dd class="font-medium text-gray-900">
-                {{ building.built_year }}년
-              </dd>
-            </div>
-          </dl>
-        </div>
+        <BuildingInfoCard :building="building" />
 
         <!-- Nearby Commerce Info -->
         <NearbyCommerceInfo
@@ -122,12 +105,16 @@ import { useBuildingStore } from "@/stores/building";
 import { reviewAPI } from "@/utils/api";
 import ReviewCard from "@/components/common/ReviewCard.vue";
 import NearbyCommerceInfo from "@/components/common/NearbyCommerceInfo.vue";
+import ContactCard from "@/components/common/ContactCard.vue";
+import BuildingInfoCard from "@/components/common/BuildingInfoCard.vue";
 
 export default {
   name: "BuildingDetailPage",
   components: {
     ReviewCard,
     NearbyCommerceInfo,
+    ContactCard,
+    BuildingInfoCard,
   },
   setup() {
     const route = useRoute();
