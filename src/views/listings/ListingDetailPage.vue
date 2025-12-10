@@ -59,26 +59,42 @@
           </dl>
         </div>
 
-        <!-- Nearby POI -->
+        <!-- Nearby Commerce Info -->
         <div class="card p-6">
-          <h3 class="font-semibold text-gray-900 mb-4">주변 시설</h3>
-          <ul class="space-y-3">
+          <h3 class="font-semibold text-gray-900 mb-4">
+            주변 상권
+            <span class="text-sm font-normal text-gray-500 ml-2"
+              >(근 {{ commerceRadius }}m 내)</span
+            >
+          </h3>
+          <div v-if="isLoadingCommerce" class="text-center py-4">
+            <p class="text-gray-500 text-sm">상권 정보를 불러오는 중...</p>
+          </div>
+          <ul
+            v-else-if="nearbyCommerce && Object.keys(nearbyCommerce).length > 0"
+            class="space-y-3"
+          >
             <li
-              v-for="poi in nearbyPOIs"
-              :key="poi.id"
+              v-for="item in commerceItems"
+              :key="item.key"
               class="flex items-center justify-between text-sm"
             >
               <div class="flex items-center">
                 <span
                   class="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center mr-3"
                 >
-                  <span class="text-primary-600">{{ poi.icon }}</span>
+                  <span class="text-primary-600">{{ item.icon }}</span>
                 </span>
-                <span class="text-gray-900">{{ poi.name }}</span>
+                <span class="text-gray-900">{{ item.label }}</span>
               </div>
-              <span class="text-gray-500">{{ poi.distance }}m</span>
+              <span class="text-gray-900 font-medium"
+                >{{ nearbyCommerce[item.key] || 0 }}개</span
+              >
             </li>
           </ul>
+          <div v-else class="text-center py-4">
+            <p class="text-gray-500 text-sm">상권 정보를 불러올 수 없습니다</p>
+          </div>
         </div>
       </div>
     </div>
@@ -97,7 +113,7 @@
 import { ref, computed, onMounted } from "vue";
 import { useRoute } from "vue-router";
 import { useListingStore } from "@/stores/listing";
-import { reviewAPI } from "@/utils/api";
+import { reviewAPI, kakaoMapAPI } from "@/utils/api";
 import ReviewCard from "@/components/common/ReviewCard.vue";
 import ListingBasicInfo from "@/components/listings/ListingBasicInfo.vue";
 
@@ -115,9 +131,25 @@ export default {
       listingStore.getListingById(route.params.id)
     );
     const reviews = ref([]);
+    const nearbyCommerce = ref({});
+    const isLoadingCommerce = ref(false);
+    const commerceRadius = ref(500); // 반경 (미터)
+
+    const commerceItems = [
+      { key: "convenienceStore", label: "편의점", icon: "🏪" },
+      { key: "cafe", label: "카페", icon: "☕" },
+      { key: "mart", label: "마트", icon: "🛒" },
+      { key: "restaurant", label: "음식점", icon: "🍽️" },
+      { key: "pharmacy", label: "약국", icon: "💊" },
+      { key: "bank", label: "은행", icon: "🏦" },
+      { key: "hospital", label: "병원", icon: "🏥" },
+      { key: "subway", label: "지하철역", icon: "🚇" },
+    ];
 
     onMounted(async () => {
       await listingStore.fetchListingById(route.params.id);
+
+      // 리뷰 조회
       try {
         const response = await reviewAPI.getListingReviews(route.params.id);
         reviews.value = response.data.map((review) => ({
@@ -134,14 +166,29 @@ export default {
       } catch (err) {
         console.error("리뷰를 불러오는데 실패했습니다:", err);
       }
-    });
 
-    const nearbyPOIs = [
-      { id: 1, name: "신촌역 2호선", distance: 350, icon: "🚇" },
-      { id: 2, name: "GS25 편의점", distance: 50, icon: "🏪" },
-      { id: 3, name: "올리브영", distance: 200, icon: "💊" },
-      { id: 4, name: "스타벅스", distance: 150, icon: "☕" },
-    ];
+      // 주변 상권 정보 조회
+      if (
+        listing.value &&
+        listing.value.building &&
+        listing.value.building.lat &&
+        listing.value.building.lng
+      ) {
+        isLoadingCommerce.value = true;
+        try {
+          const response = await kakaoMapAPI.getNearbyCommerceInfo(
+            listing.value.building.lat,
+            listing.value.building.lng,
+            commerceRadius.value
+          );
+          nearbyCommerce.value = response.data;
+        } catch (err) {
+          console.error("주변 상권 정보를 불러오는데 실패했습니다:", err);
+        } finally {
+          isLoadingCommerce.value = false;
+        }
+      }
+    });
 
     function toggleFavorite(id) {
       listingStore.toggleFavorite(id);
@@ -150,7 +197,10 @@ export default {
     return {
       listing,
       reviews,
-      nearbyPOIs,
+      nearbyCommerce,
+      isLoadingCommerce,
+      commerceItems,
+      commerceRadius,
       toggleFavorite,
     };
   },
