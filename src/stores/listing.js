@@ -77,7 +77,11 @@ export const useListingStore = defineStore("listing", () => {
       listings.value.push(response.data);
       return { success: true, data: response.data };
     } catch (err) {
-      error.value = err.response?.data?.message || "매물 등록에 실패했습니다.";
+      error.value =
+        err.response?.data?.error ||
+        err.response?.data?.message ||
+        "매물 등록에 실패했습니다.";
+      console.error("매물 등록 에러 상세:", err.response?.data);
       return { success: false, error: error.value };
     } finally {
       isLoading.value = false;
