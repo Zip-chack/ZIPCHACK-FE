@@ -1,11 +1,11 @@
 <template>
   <div class="w-96 bg-white border-l border-gray-200 flex flex-col">
-    <!-- Search -->
+    <!-- Building Search (건물명 필터링용) -->
     <div class="p-4 border-b border-gray-200">
       <input
         v-model="searchQuery"
         type="text"
-        placeholder="지역, 건물명 검색"
+        placeholder="건물명으로 필터링"
         class="input"
         @input="$emit('search', searchQuery)"
       />
@@ -114,6 +114,13 @@
 
       <!-- Building List View -->
       <div v-else class="divide-y divide-gray-100">
+        <div
+          v-if="buildings.length === 0"
+          class="p-8 text-center text-gray-500"
+        >
+          <p>표시할 건물이 없습니다.</p>
+          <p class="text-sm mt-2">지도를 이동하거나 검색해보세요.</p>
+        </div>
         <button
           v-for="building in buildings"
           :key="building.id"
