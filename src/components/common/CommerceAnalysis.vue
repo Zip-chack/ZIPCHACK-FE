@@ -1,47 +1,64 @@
 <template>
   <div class="card p-6">
     <div class="flex items-center justify-between mb-4">
-      <h3 class="font-semibold text-gray-900">상권 분석</h3>
+      <h3 class="font-semibold text-gray-900">매물 분석</h3>
+    </div>
+
+    <div v-if="isGeneratingReport" class="text-center py-4">
+      <div
+        class="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-primary-500 mb-2"
+      ></div>
+      <p class="text-gray-500 text-sm">분석 리포트를 생성하는 중입니다...</p>
+    </div>
+
+    <div v-else-if="savedReport">
+      <!-- 리포트 미리보기 -->
+      <div class="mb-4">
+        <p class="text-gray-700 text-sm leading-relaxed line-clamp-3">
+          {{ reportPreview }}
+        </p>
+      </div>
       <button
-        @click="generateAnalysis"
-        :disabled="isGenerating"
-        class="btn-primary text-sm"
+        @click="showReportModal = true"
+        class="btn-secondary w-full py-2 text-sm font-semibold"
       >
-        {{ isGenerating ? "분석 중..." : "분석 생성" }}
+        자세히 보기
       </button>
     </div>
 
-    <div v-if="isGenerating" class="text-center py-8">
-      <p class="text-gray-500 text-sm">상권 분석을 생성하는 중입니다...</p>
+    <div v-else>
+      <button
+        @click="generateReport"
+        class="btn-primary w-full py-2.5 text-sm font-semibold"
+      >
+        분석 리포트 생성하기
+      </button>
     </div>
 
-    <div v-else-if="analysisData">
-      <!-- LLM Report -->
-      <div v-if="report">
-        <div class="prose prose-sm max-w-none">
-          <div
-            class="p-6 bg-gray-50 rounded-lg text-gray-700 whitespace-pre-line"
-            v-html="formatReport(report)"
-          ></div>
-        </div>
-      </div>
-    </div>
-
-    <div v-else class="text-center py-8">
-      <p class="text-gray-500 text-sm mb-4">
-        상권 분석을 생성하려면 버튼을 클릭하세요.
-      </p>
-    </div>
+    <!-- Report Modal -->
+    <ReportModal
+      :is-open="showReportModal"
+      :report="savedReport"
+      @close="showReportModal = false"
+    />
   </div>
 </template>
 
 <script>
-import { ref } from "vue";
+import { ref, computed, watch } from "vue";
 import { kakaoMapAPI } from "@/utils/api";
+import ReportModal from "@/components/common/ReportModal.vue";
 
 export default {
   name: "CommerceAnalysis",
+  components: {
+    ReportModal,
+  },
   props: {
+    buildingId: {
+      type: [Number, String],
+      required: true,
+    },
     lat: {
       type: Number,
       required: true,
@@ -56,128 +73,83 @@ export default {
     },
   },
   setup(props) {
-    const isGenerating = ref(false);
-    const report = ref("");
-    const analysisData = ref(null);
+    const isGeneratingReport = ref(false);
+    const savedReport = ref("");
+    const showReportModal = ref(false);
 
-    const generateAnalysis = async () => {
-      isGenerating.value = true;
-      try {
-        // 레포트 생성 (Python AI 서버 호출)
-        try {
-          const reportResponse = await kakaoMapAPI.getCommerceReport(
-            props.lat,
-            props.lng,
-            props.radius
-          );
-          report.value = reportResponse.data.report;
-        } catch (err) {
-          console.error("레포트 생성 실패:", err);
-          report.value = "레포트를 생성하는데 실패했습니다.";
-        }
-
-        analysisData.value = {
-          report: report.value,
-        };
-      } catch (err) {
-        console.error("상권 분석 실패:", err);
-        alert("상권 분석을 생성하는데 실패했습니다.");
-      } finally {
-        isGenerating.value = false;
-      }
+    // 리포트 저장 키 생성
+    const getReportKey = (buildingId) => {
+      return `commerce_report_${buildingId}`;
     };
 
-    const formatReport = (text) => {
-      if (!text) return "";
+    // 리포트 미리보기 (100자)
+    const reportPreview = computed(() => {
+      if (!savedReport.value) return "";
+      // 마크다운 형식의 텍스트에서 HTML 태그나 마크다운 문법 제거
+      let text = savedReport.value
+        .replace(/<[^>]*>/g, "") // HTML 태그 제거
+        .replace(/^#{1,6}\s+/gm, "") // 마크다운 헤더 제거
+        .replace(/^\s*[-*+]\s+/gm, "") // 마크다운 리스트 제거
+        .replace(/\*\*([^*]+)\*\*/g, "$1") // 볼드 제거
+        .replace(/\*([^*]+)\*/g, "$1") // 이탤릭 제거
+        .trim();
 
-      // 줄 단위로 분리
-      const lines = text.split("\n");
-      let formatted = "";
-      let inList = false;
+      // 줄바꿈을 공백으로 변환
+      text = text.replace(/\n+/g, " ");
 
-      lines.forEach((line, index) => {
-        const trimmed = line.trim();
+      return text.length > 100 ? text.substring(0, 100) + "..." : text;
+    });
 
-        // 헤더 처리
-        if (trimmed.startsWith("### ")) {
-          if (inList) {
-            formatted += "</ul>";
-            inList = false;
-          }
-          formatted += `<h3 class="text-lg font-semibold text-gray-900 mb-3 mt-4">${trimmed.substring(
-            4
-          )}</h3>`;
-        } else if (trimmed.startsWith("## ")) {
-          if (inList) {
-            formatted += "</ul>";
-            inList = false;
-          }
-          formatted += `<h2 class="text-xl font-semibold text-gray-900 mb-3 mt-4">${trimmed.substring(
-            3
-          )}</h2>`;
-        } else if (trimmed.startsWith("# ")) {
-          if (inList) {
-            formatted += "</ul>";
-            inList = false;
-          }
-          formatted += `<h1 class="text-2xl font-semibold text-gray-900 mb-4 mt-4">${trimmed.substring(
-            2
-          )}</h1>`;
+    // 건물이 변경될 때 저장된 리포트 불러오기
+    watch(
+      () => props.buildingId,
+      (buildingId) => {
+        if (buildingId) {
+          const stored = localStorage.getItem(getReportKey(buildingId));
+          savedReport.value = stored || "";
+        } else {
+          savedReport.value = "";
         }
-        // 리스트 처리
-        else if (trimmed.startsWith("- ")) {
-          if (!inList) {
-            formatted += '<ul class="list-disc ml-6 mb-3 space-y-1">';
-            inList = true;
-          }
-          formatted += `<li>${trimmed.substring(2)}</li>`;
-        }
-        // 빈 줄 처리
-        else if (trimmed === "") {
-          if (inList) {
-            formatted += "</ul>";
-            inList = false;
-          }
-          formatted += "<br>";
-        }
-        // 일반 텍스트 처리
-        else {
-          if (inList) {
-            formatted += "</ul>";
-            inList = false;
-          }
-          // 이미 <p> 태그가 있거나 헤더 다음이면 그냥 추가
-          if (
-            formatted.endsWith("</h3>") ||
-            formatted.endsWith("</h2>") ||
-            formatted.endsWith("</h1>")
-          ) {
-            formatted += `<p class="mb-3 leading-relaxed">${trimmed}</p>`;
-          } else if (
-            !formatted.endsWith("</p>") &&
-            !formatted.endsWith("<br>")
-          ) {
-            formatted += `<p class="mb-3 leading-relaxed">${trimmed}</p>`;
-          } else {
-            formatted += `<p class="mb-3 leading-relaxed">${trimmed}</p>`;
-          }
-        }
-      });
+        showReportModal.value = false;
+      },
+      { immediate: true }
+    );
 
-      // 마지막에 리스트가 열려있으면 닫기
-      if (inList) {
-        formatted += "</ul>";
+    // 리포트 생성
+    const generateReport = async () => {
+      if (!props.lat || !props.lng) {
+        alert("건물 위치 정보가 없습니다.");
+        return;
       }
 
-      return formatted;
+      isGeneratingReport.value = true;
+      try {
+        const reportResponse = await kakaoMapAPI.getCommerceReport(
+          props.lat,
+          props.lng,
+          props.radius
+        );
+        const report = reportResponse.data.report;
+        savedReport.value = report;
+
+        // localStorage에 저장
+        if (props.buildingId) {
+          localStorage.setItem(getReportKey(props.buildingId), report);
+        }
+      } catch (err) {
+        console.error("레포트 생성 실패:", err);
+        alert("레포트를 생성하는데 실패했습니다.");
+      } finally {
+        isGeneratingReport.value = false;
+      }
     };
 
     return {
-      isGenerating,
-      report,
-      analysisData,
-      generateAnalysis,
-      formatReport,
+      isGeneratingReport,
+      savedReport,
+      showReportModal,
+      reportPreview,
+      generateReport,
     };
   },
 };
