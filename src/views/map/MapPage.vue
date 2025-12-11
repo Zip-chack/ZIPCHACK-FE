@@ -1,27 +1,5 @@
 <template>
   <div class="flex flex-col h-[calc(100vh-64px)]">
-    <!-- 상단 검색창 -->
-    <div class="bg-white border-b border-gray-200 px-4 py-4">
-      <div class="max-w-4xl mx-auto">
-        <div class="flex gap-2">
-          <input
-            v-model="addressSearchQuery"
-            type="text"
-            placeholder="지역, 주소로 검색하세요 (예: 광주광역시, 서울시 강남구)"
-            class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-            @keyup.enter="handleAddressSearch"
-          />
-          <button
-            @click="handleAddressSearch"
-            :disabled="isSearchingAddress"
-            class="btn-primary px-6 whitespace-nowrap"
-          >
-            {{ isSearchingAddress ? "검색 중..." : "검색" }}
-          </button>
-        </div>
-      </div>
-    </div>
-
     <!-- 지도와 사이드바 영역 -->
     <div class="flex flex-1 overflow-hidden">
       <!-- Map Area -->
@@ -63,11 +41,15 @@
         :buildings="filteredBuildings"
         :building-listings="buildingListings"
         :is-loading-listings="isLoadingListings"
+        :address-search-query="addressSearchQuery"
+        :is-searching-address="isSearchingAddress"
         @search="handleSearch"
         @back-to-list="selectedBuilding = null"
         @select-building="selectBuilding"
         @go-to-listing="goToListing"
         @toggle-favorite="toggleFavorite"
+        @update:address-search-query="addressSearchQuery = $event"
+        @address-search="handleAddressSearch"
       />
     </div>
   </div>
@@ -424,14 +406,17 @@ export default {
     }
 
     // 상단 주소 검색 기능
-    async function handleAddressSearch() {
-      const query = addressSearchQuery.value.trim();
-      if (!query || !map) return;
+    async function handleAddressSearch(query) {
+      const searchQuery = query || addressSearchQuery.value.trim();
+      if (!searchQuery || !map) return;
+
+      // 검색어 업데이트
+      addressSearchQuery.value = searchQuery;
 
       isSearchingAddress.value = true;
       try {
         // 카카오맵 주소 검색 API 호출
-        const response = await kakaoMapAPI.searchAddress(query);
+        const response = await kakaoMapAPI.searchAddress(searchQuery);
 
         if (response.data && response.data.lat && response.data.lng) {
           // 검색된 주소로 지도 이동
