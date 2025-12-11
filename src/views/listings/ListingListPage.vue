@@ -94,7 +94,7 @@
 </template>
 
 <script>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useListingStore } from "@/stores/listing";
 import ListingCard from "@/components/listings/ListingCard.vue";
@@ -108,10 +108,6 @@ export default {
     const router = useRouter();
     const listingStore = useListingStore();
 
-    onMounted(async () => {
-      await listingStore.fetchListings();
-    });
-
     const filters = ref({
       search: "",
       roomType: "",
@@ -119,32 +115,50 @@ export default {
       sort: "latest",
     });
 
-    const filteredListings = computed(() => {
-      let result = [...listingStore.listings];
+    // 서버에서 필터링된 매물 가져오기
+    const fetchFilteredListings = async () => {
+      const params = {};
 
       if (filters.value.search) {
-        const query = filters.value.search.toLowerCase();
-        result = result.filter(
-          (l) =>
-            l.title.toLowerCase().includes(query) ||
-            l.building.road_address.toLowerCase().includes(query)
-        );
+        params.search = filters.value.search;
       }
 
       if (filters.value.roomType) {
-        result = result.filter((l) => l.room_type === filters.value.roomType);
+        params.roomType = filters.value.roomType;
       }
 
       if (filters.value.priceRange) {
         const [min, max] = filters.value.priceRange.split("-").map(Number);
         if (max) {
-          result = result.filter(
-            (l) => l.monthly_rent >= min && l.monthly_rent < max
-          );
+          params.minPrice = min;
+          params.maxPrice = max;
         } else {
-          result = result.filter((l) => l.monthly_rent >= 100);
+          params.minPrice = 100;
         }
       }
+
+      await listingStore.fetchListings(params);
+    };
+
+    onMounted(async () => {
+      await fetchFilteredListings();
+    });
+
+    // 필터 변경 시 서버에서 다시 가져오기
+    watch(
+      () => [
+        filters.value.search,
+        filters.value.roomType,
+        filters.value.priceRange,
+      ],
+      () => {
+        fetchFilteredListings();
+      }
+    );
+
+    // 클라이언트 사이드 정렬만 수행
+    const filteredListings = computed(() => {
+      let result = [...listingStore.listings];
 
       switch (filters.value.sort) {
         case "price_low":
@@ -155,6 +169,10 @@ export default {
           break;
         case "rating":
           result.sort((a, b) => b.rating - a.rating);
+          break;
+        case "latest":
+        default:
+          // 최신순은 서버에서 이미 정렬되어 있을 것으로 가정
           break;
       }
 
