@@ -117,6 +117,17 @@
             매물 등록
           </router-link>
 
+          <!-- Nearby Commerce Info -->
+          <NearbyCommerceInfo
+            v-if="
+              selectedBuilding && selectedBuilding.lat && selectedBuilding.lng
+            "
+            :lat="selectedBuilding.lat"
+            :lng="selectedBuilding.lng"
+            :radius="500"
+            class="mb-6"
+          />
+
           <!-- Building Listings -->
           <div v-if="buildingListings.length > 0">
             <h3 class="text-lg font-bold text-gray-900 mb-4">
@@ -273,12 +284,14 @@
 import { ref } from "vue";
 import ListingCard from "@/components/listings/ListingCard.vue";
 import AddressSearchBar from "@/components/map/AddressSearchBar.vue";
+import NearbyCommerceInfo from "@/components/common/NearbyCommerceInfo.vue";
 
 export default {
   name: "BuildingSidebar",
   components: {
     ListingCard,
     AddressSearchBar,
+    NearbyCommerceInfo,
   },
   props: {
     selectedBuilding: {

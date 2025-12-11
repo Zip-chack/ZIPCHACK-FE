@@ -45,6 +45,15 @@
           </div>
         </div>
 
+        <!-- Commerce Analysis -->
+        <CommerceAnalysis
+          v-if="building && building.id && building.lat && building.lng"
+          :building-id="building.id"
+          :lat="building.lat"
+          :lng="building.lng"
+          :radius="500"
+        />
+
         <!-- Reviews Section -->
         <div class="card p-6">
           <div class="flex items-center justify-between mb-6">
@@ -68,14 +77,6 @@
             </div>
           </div>
         </div>
-
-        <!-- Commerce Analysis -->
-        <CommerceAnalysis
-          v-if="building && building.lat && building.lng"
-          :lat="building.lat"
-          :lng="building.lng"
-          :radius="500"
-        />
       </div>
 
       <!-- Sidebar -->
@@ -85,6 +86,14 @@
 
         <!-- Building Info -->
         <BuildingInfoCard :building="building" />
+
+        <!-- Commerce Radar Chart -->
+        <CommerceRadarChart
+          v-if="building && building.lat && building.lng"
+          :lat="building.lat"
+          :lng="building.lng"
+          :radius="500"
+        />
 
         <!-- Nearby Commerce Info -->
         <NearbyCommerceInfo
@@ -115,6 +124,7 @@ import ReviewCard from "@/components/common/ReviewCard.vue";
 import NearbyCommerceInfo from "@/components/common/NearbyCommerceInfo.vue";
 import ContactCard from "@/components/common/ContactCard.vue";
 import BuildingInfoCard from "@/components/common/BuildingInfoCard.vue";
+import CommerceRadarChart from "@/components/common/CommerceRadarChart.vue";
 import CommerceAnalysis from "@/components/common/CommerceAnalysis.vue";
 
 export default {
@@ -124,6 +134,7 @@ export default {
     NearbyCommerceInfo,
     ContactCard,
     BuildingInfoCard,
+    CommerceRadarChart,
     CommerceAnalysis,
   },
   setup() {
