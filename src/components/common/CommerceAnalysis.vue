@@ -16,15 +16,8 @@
     </div>
 
     <div v-else-if="analysisData">
-      <!-- Radar Chart -->
-      <div v-if="chartData" class="mb-6">
-        <div class="max-w-sm mx-auto" style="height: 300px">
-          <RadarChart :data="chartData" :options="chartOptions" />
-        </div>
-      </div>
-
       <!-- LLM Report -->
-      <div v-if="report" class="mt-6">
+      <div v-if="report">
         <div class="prose prose-sm max-w-none">
           <div
             class="p-6 bg-gray-50 rounded-lg text-gray-700 whitespace-pre-line"
@@ -43,33 +36,11 @@
 </template>
 
 <script>
-import { ref, computed } from "vue";
-import { Radar } from "vue-chartjs";
-import {
-  Chart as ChartJS,
-  RadialLinearScale,
-  PointElement,
-  LineElement,
-  Filler,
-  Tooltip,
-  Legend,
-} from "chart.js";
+import { ref } from "vue";
 import { kakaoMapAPI } from "@/utils/api";
-
-ChartJS.register(
-  RadialLinearScale,
-  PointElement,
-  LineElement,
-  Filler,
-  Tooltip,
-  Legend
-);
 
 export default {
   name: "CommerceAnalysis",
-  components: {
-    RadarChart: Radar,
-  },
   props: {
     lat: {
       type: Number,
@@ -86,108 +57,12 @@ export default {
   },
   setup(props) {
     const isGenerating = ref(false);
-    const commerceInfo = ref(null);
     const report = ref("");
     const analysisData = ref(null);
-
-    const chartData = computed(() => {
-      if (!commerceInfo.value) return null;
-
-      const labels = [
-        "편의점",
-        "카페",
-        "마트",
-        "음식점",
-        "약국",
-        "은행",
-        "병원",
-        "지하철역",
-      ];
-      const values = [
-        commerceInfo.value.convenienceStore || 0,
-        commerceInfo.value.cafe || 0,
-        commerceInfo.value.mart || 0,
-        commerceInfo.value.restaurant || 0,
-        commerceInfo.value.pharmacy || 0,
-        commerceInfo.value.bank || 0,
-        commerceInfo.value.hospital || 0,
-        commerceInfo.value.subway || 0,
-      ];
-
-      // 최대값 계산 (정규화를 위해)
-      const maxValue = Math.max(...values, 1);
-
-      return {
-        labels,
-        datasets: [
-          {
-            label: "상권 밀도",
-            data: values.map((v) => (v / maxValue) * 100), // 0-100으로 정규화
-            backgroundColor: "rgba(59, 130, 246, 0.2)",
-            borderColor: "rgba(59, 130, 246, 1)",
-            borderWidth: 2,
-            pointBackgroundColor: "rgba(59, 130, 246, 1)",
-            pointBorderColor: "#fff",
-            pointHoverBackgroundColor: "#fff",
-            pointHoverBorderColor: "rgba(59, 130, 246, 1)",
-          },
-        ],
-      };
-    });
-
-    const chartOptions = {
-      responsive: true,
-      maintainAspectRatio: false,
-      aspectRatio: 1,
-      scales: {
-        r: {
-          beginAtZero: true,
-          max: 100,
-          ticks: {
-            stepSize: 20,
-          },
-        },
-      },
-      plugins: {
-        legend: {
-          display: false,
-        },
-        tooltip: {
-          callbacks: {
-            label: function (context) {
-              const label = context.label || "";
-              const value = context.parsed.r;
-              const originalValue =
-                commerceInfo.value[
-                  [
-                    "convenienceStore",
-                    "cafe",
-                    "mart",
-                    "restaurant",
-                    "pharmacy",
-                    "bank",
-                    "hospital",
-                    "subway",
-                  ][context.dataIndex]
-                ] || 0;
-              return `${label}: ${originalValue}개 (${value.toFixed(0)}%)`;
-            },
-          },
-        },
-      },
-    };
 
     const generateAnalysis = async () => {
       isGenerating.value = true;
       try {
-        // 상권 정보 조회
-        const commerceResponse = await kakaoMapAPI.getNearbyCommerceInfo(
-          props.lat,
-          props.lng,
-          props.radius
-        );
-        commerceInfo.value = commerceResponse.data;
-
         // 레포트 생성 (Python AI 서버 호출)
         try {
           const reportResponse = await kakaoMapAPI.getCommerceReport(
@@ -202,7 +77,6 @@ export default {
         }
 
         analysisData.value = {
-          commerceInfo: commerceInfo.value,
           report: report.value,
         };
       } catch (err) {
@@ -300,11 +174,8 @@ export default {
 
     return {
       isGenerating,
-      commerceInfo,
       report,
       analysisData,
-      chartData,
-      chartOptions,
       generateAnalysis,
       formatReport,
     };
