@@ -9,6 +9,21 @@
           @toggle-favorite="toggleFavorite"
         />
 
+        <!-- Commerce Analysis -->
+        <CommerceAnalysis
+          v-if="
+            listing &&
+            listing.building &&
+            listing.building.id &&
+            listing.building.lat &&
+            listing.building.lng
+          "
+          :building-id="listing.building.id"
+          :lat="listing.building.lat"
+          :lng="listing.building.lng"
+          :radius="500"
+        />
+
         <!-- Reviews Section -->
         <div class="card p-6">
           <div class="flex items-center justify-between mb-6">
@@ -29,9 +44,18 @@
             />
           </div>
         </div>
+      </div>
 
-        <!-- Commerce Analysis -->
-        <CommerceAnalysis
+      <!-- Sidebar -->
+      <div class="space-y-6">
+        <!-- Contact Card -->
+        <ContactCard />
+
+        <!-- Building Info -->
+        <BuildingInfoCard :building="listing.building" />
+
+        <!-- Commerce Radar Chart -->
+        <CommerceRadarChart
           v-if="
             listing &&
             listing.building &&
@@ -42,15 +66,6 @@
           :lng="listing.building.lng"
           :radius="500"
         />
-      </div>
-
-      <!-- Sidebar -->
-      <div class="space-y-6">
-        <!-- Contact Card -->
-        <ContactCard />
-
-        <!-- Building Info -->
-        <BuildingInfoCard :building="listing.building" />
 
         <!-- Nearby Commerce Info -->
         <NearbyCommerceInfo
@@ -87,6 +102,7 @@ import ListingBasicInfo from "@/components/listings/ListingBasicInfo.vue";
 import NearbyCommerceInfo from "@/components/common/NearbyCommerceInfo.vue";
 import ContactCard from "@/components/common/ContactCard.vue";
 import BuildingInfoCard from "@/components/common/BuildingInfoCard.vue";
+import CommerceRadarChart from "@/components/common/CommerceRadarChart.vue";
 import CommerceAnalysis from "@/components/common/CommerceAnalysis.vue";
 
 export default {
@@ -97,6 +113,7 @@ export default {
     NearbyCommerceInfo,
     ContactCard,
     BuildingInfoCard,
+    CommerceRadarChart,
     CommerceAnalysis,
   },
   setup() {
