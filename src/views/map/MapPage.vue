@@ -1,50 +1,75 @@
 <template>
-  <div class="h-[calc(100vh-64px)] flex">
-    <!-- Map Area -->
-    <div class="flex-1 bg-gray-200 relative">
-      <div id="map" class="w-full h-full"></div>
-      <!-- Error Message -->
-      <div
-        v-if="mapError"
-        class="absolute inset-0 flex items-center justify-center bg-white bg-opacity-90 z-50"
-      >
-        <div class="text-center p-6 bg-white rounded-lg shadow-lg max-w-md">
-          <svg
-            class="w-16 h-16 text-red-500 mx-auto mb-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+  <div class="flex flex-col h-[calc(100vh-64px)]">
+    <!-- 상단 검색창 -->
+    <div class="bg-white border-b border-gray-200 px-4 py-4">
+      <div class="max-w-4xl mx-auto">
+        <div class="flex gap-2">
+          <input
+            v-model="addressSearchQuery"
+            type="text"
+            placeholder="지역, 주소로 검색하세요 (예: 광주광역시, 서울시 강남구)"
+            class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+            @keyup.enter="handleAddressSearch"
+          />
+          <button
+            @click="handleAddressSearch"
+            :disabled="isSearchingAddress"
+            class="btn-primary px-6 whitespace-nowrap"
           >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          <h3 class="text-lg font-semibold text-gray-900 mb-2">
-            카카오맵 로드 실패
-          </h3>
-          <p class="text-gray-600 mb-4">{{ mapError }}</p>
-          <p class="text-sm text-gray-500">
-            환경 변수 VITE_KAKAO_MAP_JS_KEY를 설정해주세요.
-          </p>
+            {{ isSearchingAddress ? "검색 중..." : "검색" }}
+          </button>
         </div>
       </div>
     </div>
 
-    <!-- Sidebar -->
-    <BuildingSidebar
-      :selected-building="selectedBuilding"
-      :buildings="filteredBuildings"
-      :building-listings="buildingListings"
-      :is-loading-listings="isLoadingListings"
-      @search="handleSearch"
-      @back-to-list="selectedBuilding = null"
-      @select-building="selectBuilding"
-      @go-to-listing="goToListing"
-      @toggle-favorite="toggleFavorite"
-    />
+    <!-- 지도와 사이드바 영역 -->
+    <div class="flex flex-1 overflow-hidden">
+      <!-- Map Area -->
+      <div class="flex-1 bg-gray-200 relative">
+        <div id="map" class="w-full h-full"></div>
+        <!-- Error Message -->
+        <div
+          v-if="mapError"
+          class="absolute inset-0 flex items-center justify-center bg-white bg-opacity-90 z-50"
+        >
+          <div class="text-center p-6 bg-white rounded-lg shadow-lg max-w-md">
+            <svg
+              class="w-16 h-16 text-red-500 mx-auto mb-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            <h3 class="text-lg font-semibold text-gray-900 mb-2">
+              카카오맵 로드 실패
+            </h3>
+            <p class="text-gray-600 mb-4">{{ mapError }}</p>
+            <p class="text-sm text-gray-500">
+              환경 변수 VITE_KAKAO_MAP_JS_KEY를 설정해주세요.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sidebar -->
+      <BuildingSidebar
+        :selected-building="selectedBuilding"
+        :buildings="filteredBuildings"
+        :building-listings="buildingListings"
+        :is-loading-listings="isLoadingListings"
+        @search="handleSearch"
+        @back-to-list="selectedBuilding = null"
+        @select-building="selectBuilding"
+        @go-to-listing="goToListing"
+        @toggle-favorite="toggleFavorite"
+      />
+    </div>
   </div>
 </template>
 
@@ -64,7 +89,9 @@ export default {
     const buildingStore = useBuildingStore();
     const router = useRouter();
 
-    const searchQuery = ref("");
+    const searchQuery = ref(""); // 사이드바 검색
+    const addressSearchQuery = ref(""); // 상단 주소 검색
+    const isSearchingAddress = ref(false);
     const viewMode = ref("map");
     const selectedBuilding = ref(null);
     const buildingListings = ref([]);
@@ -152,10 +179,36 @@ export default {
         map = new window.kakao.maps.Map(container, options);
         mapError.value = null;
 
+        // 초기 지도 경계 설정
+        try {
+          const bounds = map.getBounds();
+          mapBounds.value = {
+            swLat: bounds.getSouthWest().getLat(),
+            swLng: bounds.getSouthWest().getLng(),
+            neLat: bounds.getNorthEast().getLat(),
+            neLng: bounds.getNorthEast().getLng(),
+          };
+        } catch (error) {
+          // 무시
+        }
+
         // 지도 이동/확대/축소 이벤트 리스너 추가
         window.kakao.maps.event.addListener(map, "idle", () => {
           // 지도 이동이 완료된 후 현재 화면의 건물 검색
           loadBuildingsInBounds();
+
+          // 지도 경계 업데이트 (사이드바 목록 업데이트용)
+          try {
+            const bounds = map.getBounds();
+            mapBounds.value = {
+              swLat: bounds.getSouthWest().getLat(),
+              swLng: bounds.getSouthWest().getLng(),
+              neLat: bounds.getNorthEast().getLat(),
+              neLng: bounds.getNorthEast().getLng(),
+            };
+          } catch (error) {
+            // 무시
+          }
         });
       } catch (error) {
         const errorMsg = "지도 초기화 실패: " + error.message;
@@ -238,6 +291,7 @@ export default {
       markers.forEach((marker) => marker.setMap(null));
       markers = [];
 
+      // 지도에는 모든 건물의 마커 표시 (사이드바만 화면에 보이는 건물로 필터링)
       buildings.value.forEach((building) => {
         const markerPosition = new window.kakao.maps.LatLng(
           building.lat,
@@ -288,18 +342,124 @@ export default {
       { deep: true }
     );
 
+    // 지도 경계 변경을 감지하기 위한 ref
+    const mapBounds = ref(null);
+
+    // 지도 이동 시 사이드바 목록 업데이트를 위한 watch
+    watch(
+      () => map,
+      (newMap) => {
+        if (newMap) {
+          // 지도 경계 변경 이벤트 리스너 추가
+          window.kakao.maps.event.addListener(newMap, "bounds_changed", () => {
+            try {
+              const bounds = newMap.getBounds();
+              mapBounds.value = {
+                swLat: bounds.getSouthWest().getLat(),
+                swLng: bounds.getSouthWest().getLng(),
+                neLat: bounds.getNorthEast().getLat(),
+                neLng: bounds.getNorthEast().getLng(),
+              };
+            } catch (error) {
+              // 무시
+            }
+          });
+        }
+      }
+    );
+
+    // 현재 지도 화면에 보이는 건물만 필터링
+    const visibleBuildings = computed(() => {
+      if (!buildings.value.length) return [];
+
+      // 지도가 아직 초기화되지 않았으면 모든 건물 반환
+      if (!map) return buildings.value;
+
+      try {
+        // mapBounds가 있으면 사용, 없으면 현재 bounds 가져오기
+        let swLat, swLng, neLat, neLng;
+
+        if (mapBounds.value) {
+          swLat = mapBounds.value.swLat;
+          swLng = mapBounds.value.swLng;
+          neLat = mapBounds.value.neLat;
+          neLng = mapBounds.value.neLng;
+        } else {
+          const bounds = map.getBounds();
+          swLat = bounds.getSouthWest().getLat();
+          swLng = bounds.getSouthWest().getLng();
+          neLat = bounds.getNorthEast().getLat();
+          neLng = bounds.getNorthEast().getLng();
+        }
+
+        return buildings.value.filter((building) => {
+          const lat = building.lat;
+          const lng = building.lng;
+          return lat >= swLat && lat <= neLat && lng >= swLng && lng <= neLng;
+        });
+      } catch (error) {
+        // 지도가 아직 초기화되지 않았으면 모든 건물 반환
+        return buildings.value;
+      }
+    });
+
+    // 검색어로 필터링 (현재 화면에 보이는 건물 중에서만)
     const filteredBuildings = computed(() => {
-      if (!searchQuery.value) return buildings.value;
-      const query = searchQuery.value.toLowerCase();
-      return buildings.value.filter(
-        (b) =>
-          b.name.toLowerCase().includes(query) ||
-          b.road_address.toLowerCase().includes(query)
-      );
+      let result = visibleBuildings.value;
+
+      if (searchQuery.value) {
+        const query = searchQuery.value.toLowerCase();
+        result = result.filter(
+          (b) =>
+            b.name.toLowerCase().includes(query) ||
+            b.road_address.toLowerCase().includes(query)
+        );
+      }
+
+      return result;
     });
 
     function handleSearch(query) {
       searchQuery.value = query;
+    }
+
+    // 상단 주소 검색 기능
+    async function handleAddressSearch() {
+      const query = addressSearchQuery.value.trim();
+      if (!query || !map) return;
+
+      isSearchingAddress.value = true;
+      try {
+        // 카카오맵 주소 검색 API 호출
+        const response = await kakaoMapAPI.searchAddress(query);
+
+        if (response.data && response.data.lat && response.data.lng) {
+          // 검색된 주소로 지도 이동
+          const lat = response.data.lat;
+          const lng = response.data.lng;
+
+          const moveLatLon = new window.kakao.maps.LatLng(lat, lng);
+          map.setCenter(moveLatLon);
+          map.setLevel(3); // 적절한 줌 레벨
+
+          // 해당 지역의 건물 검색 (약간의 지연 후)
+          setTimeout(() => {
+            loadBuildingsInBounds();
+          }, 500);
+        } else {
+          alert("검색 결과를 찾을 수 없습니다.");
+        }
+      } catch (error) {
+        console.error("주소 검색 실패:", error);
+        console.error("에러 상세:", error.response?.data || error.message);
+        const errorMessage =
+          error.response?.data?.error ||
+          error.message ||
+          "주소 검색에 실패했습니다.";
+        alert(`주소 검색 실패: ${errorMessage}`);
+      } finally {
+        isSearchingAddress.value = false;
+      }
     }
 
     async function selectBuilding(building) {
@@ -571,6 +731,8 @@ export default {
 
     return {
       searchQuery,
+      addressSearchQuery,
+      isSearchingAddress,
       viewMode,
       selectedBuilding,
       buildingListings,
@@ -578,6 +740,7 @@ export default {
       buildings,
       filteredBuildings,
       handleSearch,
+      handleAddressSearch,
       selectBuilding,
       goToListing,
       toggleFavorite,
