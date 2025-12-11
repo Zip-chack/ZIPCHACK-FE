@@ -95,7 +95,7 @@
 
 <script>
 import { ref, computed, onMounted, watch } from "vue";
-import { useRouter } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
 import { useListingStore } from "@/stores/listing";
 import ListingCard from "@/components/listings/ListingCard.vue";
 
@@ -106,6 +106,7 @@ export default {
   },
   setup() {
     const router = useRouter();
+    const route = useRoute();
     const listingStore = useListingStore();
 
     const filters = ref({
@@ -141,6 +142,11 @@ export default {
     };
 
     onMounted(async () => {
+      // URL 쿼리 파라미터에서 검색어 읽기
+      if (route.query.q) {
+        filters.value.search = route.query.q;
+      }
+
       await fetchFilteredListings();
     });
 
