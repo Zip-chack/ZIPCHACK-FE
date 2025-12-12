@@ -7,6 +7,7 @@
         <ListingBasicInfo
           :listing="listing"
           @toggle-favorite="toggleFavorite"
+          @show-roadview="showRoadview = true"
         />
 
         <!-- Commerce Analysis -->
@@ -87,6 +88,20 @@
       </router-link>
     </div>
   </div>
+
+  <!-- 로드뷰 모달 -->
+  <RoadviewModal
+    v-if="
+      listing &&
+      listing.building &&
+      listing.building.lat &&
+      listing.building.lng
+    "
+    :is-open="showRoadview"
+    :lat="listing.building.lat"
+    :lng="listing.building.lng"
+    @close="showRoadview = false"
+  />
 </template>
 
 <script>
@@ -100,6 +115,7 @@ import NearbyCommerceInfo from "@/components/common/NearbyCommerceInfo.vue";
 import ContactCard from "@/components/common/ContactCard.vue";
 import CommerceRadarChart from "@/components/common/CommerceRadarChart.vue";
 import CommerceAnalysis from "@/components/common/CommerceAnalysis.vue";
+import RoadviewModal from "@/components/common/RoadviewModal.vue";
 
 export default {
   name: "ListingDetailPage",
@@ -110,6 +126,7 @@ export default {
     ContactCard,
     CommerceRadarChart,
     CommerceAnalysis,
+    RoadviewModal,
   },
   setup() {
     const route = useRoute();
@@ -119,6 +136,7 @@ export default {
       listingStore.getListingById(route.params.id)
     );
     const reviews = ref([]);
+    const showRoadview = ref(false);
 
     onMounted(async () => {
       await listingStore.fetchListingById(route.params.id);
@@ -149,6 +167,7 @@ export default {
     return {
       listing,
       reviews,
+      showRoadview,
       toggleFavorite,
     };
   },
