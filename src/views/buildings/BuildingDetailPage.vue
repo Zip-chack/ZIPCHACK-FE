@@ -149,7 +149,7 @@
 import { ref, computed, onMounted } from "vue";
 import { useRoute } from "vue-router";
 import { useBuildingStore } from "@/stores/building";
-import { reviewAPI } from "@/utils/api";
+import { reviewAPI, buildingAPI } from "@/utils/api";
 import ReviewCard from "@/components/common/ReviewCard.vue";
 import NearbyCommerceInfo from "@/components/common/NearbyCommerceInfo.vue";
 import ContactCard from "@/components/common/ContactCard.vue";
@@ -179,9 +179,13 @@ export default {
 
     onMounted(async () => {
       await buildingStore.fetchBuildingById(route.params.id);
+
+      // 건물 리뷰 가져오기
       try {
-        const response = await reviewAPI.getBuildingReviews(route.params.id);
-        reviews.value = response.data.map((review) => ({
+        const buildingReviewsResponse = await reviewAPI.getBuildingReviews(
+          route.params.id
+        );
+        const buildingReviews = buildingReviewsResponse.data.map((review) => ({
           id: review.id,
           user: review.user,
           rating_overall: review.ratingOverall,
@@ -191,7 +195,66 @@ export default {
           title: review.title,
           content: review.content,
           created_at: review.createdAt,
+          type: "building", // 건물 리뷰임을 표시
         }));
+
+        // 해당 건물의 매물 목록 가져오기
+        try {
+          const listingsResponse = await buildingAPI.getBuildingListings(
+            route.params.id
+          );
+          const listings = listingsResponse.data || [];
+
+          // 각 매물의 리뷰 가져오기
+          const listingReviewsPromises = listings.map(async (listing) => {
+            try {
+              const listingReviewsResponse = await reviewAPI.getListingReviews(
+                listing.id
+              );
+              return listingReviewsResponse.data.map((review) => ({
+                id: review.id,
+                user: review.user,
+                rating_overall: review.ratingOverall,
+                rating_noise: review.ratingNoise,
+                rating_landlord: review.ratingLandlord,
+                rating_facility: review.ratingFacility,
+                title: review.title,
+                content: review.content,
+                created_at: review.createdAt,
+                type: "listing", // 매물 리뷰임을 표시
+                listing: {
+                  id: listing.id,
+                  title: listing.title,
+                },
+              }));
+            } catch (err) {
+              console.error(
+                `매물 ${listing.id}의 리뷰를 불러오는데 실패했습니다:`,
+                err
+              );
+              return [];
+            }
+          });
+
+          const listingReviewsArrays = await Promise.all(
+            listingReviewsPromises
+          );
+          const listingReviews = listingReviewsArrays.flat();
+
+          // 건물 리뷰와 매물 리뷰 합치기 (최신순 정렬)
+          const allReviews = [...buildingReviews, ...listingReviews];
+          allReviews.sort((a, b) => {
+            const dateA = new Date(a.created_at || 0);
+            const dateB = new Date(b.created_at || 0);
+            return dateB - dateA; // 최신순
+          });
+
+          reviews.value = allReviews;
+        } catch (err) {
+          console.error("매물 목록을 불러오는데 실패했습니다:", err);
+          // 매물 목록을 가져오지 못해도 건물 리뷰는 표시
+          reviews.value = buildingReviews;
+        }
       } catch (err) {
         console.error("리뷰를 불러오는데 실패했습니다:", err);
       }
