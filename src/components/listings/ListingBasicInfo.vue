@@ -2,7 +2,9 @@
   <div class="space-y-6">
     <!-- Image Gallery -->
     <div class="card overflow-hidden">
-      <div class="w-full h-80 bg-gray-200 flex items-center justify-center overflow-hidden">
+      <div
+        class="w-full h-80 bg-gray-200 flex items-center justify-center overflow-hidden"
+      >
         <img
           v-if="imageUrl"
           :src="imageUrl"
@@ -11,7 +13,12 @@
           @error="handleImageError"
         />
         <div v-else class="text-gray-400">
-          <svg class="w-24 h-24 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg
+            class="w-24 h-24 mx-auto"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
             <path
               stroke-linecap="round"
               stroke-linejoin="round"
@@ -27,13 +34,21 @@
     <div class="card p-6">
       <div class="flex items-start justify-between mb-4">
         <div>
-          <span
-            v-if="roomType"
-            class="bg-primary-100 text-primary-600 text-sm px-3 py-1 rounded-full"
-          >
-            {{ roomType }}
-          </span>
-          <h1 class="text-2xl font-bold text-gray-900 mt-3">{{ title }}</h1>
+          <div class="flex items-center gap-2 mb-5">
+            <span
+              v-if="roomType"
+              class="bg-primary-500 text-white text-sm font-medium px-3 py-1.5 rounded-full shadow-md"
+            >
+              {{ roomType }}
+            </span>
+            <span
+              v-if="buildingName"
+              class="bg-gray-400 text-white text-sm font-medium px-3 py-1.5 rounded-full shadow-md"
+            >
+              {{ buildingName }}
+            </span>
+          </div>
+          <h1 class="text-2xl font-bold text-gray-900">{{ title }}</h1>
           <p v-if="address" class="text-gray-600 mt-1">{{ address }}</p>
         </div>
         <button
@@ -64,9 +79,7 @@
         <span v-if="deposit && monthlyRent">
           보증금 {{ deposit }}만 / 월세 {{ monthlyRent }}만
         </span>
-        <span v-else-if="monthlyRent">
-          월세 {{ monthlyRent }}만
-        </span>
+        <span v-else-if="monthlyRent"> 월세 {{ monthlyRent }}만 </span>
         <span v-else class="text-gray-500">가격 문의</span>
         <span
           v-if="maintenanceFee"
@@ -82,15 +95,26 @@
           <p class="text-gray-500 text-sm">면적</p>
           <p class="font-semibold text-gray-900">{{ areaM2 }}m²</p>
         </div>
-        <div v-if="floor !== null && floor !== undefined" class="text-center p-4 bg-gray-50 rounded-lg">
+        <div
+          v-if="floor !== null && floor !== undefined"
+          class="text-center p-4 bg-gray-50 rounded-lg"
+        >
           <p class="text-gray-500 text-sm">층수</p>
           <p class="font-semibold text-gray-900">{{ floor }}층</p>
         </div>
-        <div v-if="showRating && rating !== null && rating !== undefined" class="text-center p-4 bg-gray-50 rounded-lg">
+        <div
+          v-if="showRating && rating !== null && rating !== undefined"
+          class="text-center p-4 bg-gray-50 rounded-lg"
+        >
           <p class="text-gray-500 text-sm">평점</p>
           <p class="font-semibold text-gray-900">{{ rating.toFixed(1) }}점</p>
         </div>
-        <div v-if="showReviewCount && reviewCount !== null && reviewCount !== undefined" class="text-center p-4 bg-gray-50 rounded-lg">
+        <div
+          v-if="
+            showReviewCount && reviewCount !== null && reviewCount !== undefined
+          "
+          class="text-center p-4 bg-gray-50 rounded-lg"
+        >
           <p class="text-gray-500 text-sm">리뷰</p>
           <p class="font-semibold text-gray-900">{{ reviewCount }}개</p>
         </div>
@@ -100,89 +124,89 @@
 </template>
 
 <script>
-import { computed } from 'vue'
+import { computed } from "vue";
 
 export default {
-  name: 'ListingBasicInfo',
+  name: "ListingBasicInfo",
   props: {
     // 매물 데이터 (전체 객체를 받거나 개별 props로 받을 수 있음)
     listing: {
       type: Object,
-      default: null
+      default: null,
     },
     // 개별 props (listing이 없을 때 사용)
     id: {
       type: [Number, String],
-      default: null
+      default: null,
     },
     title: {
       type: String,
-      default: ''
+      default: "",
     },
     image: {
       type: String,
-      default: ''
+      default: "",
     },
     roomType: {
       type: String,
-      default: ''
+      default: "",
     },
     deposit: {
       type: [Number, String],
-      default: null
+      default: null,
     },
     monthlyRent: {
       type: [Number, String],
-      default: null
+      default: null,
     },
     maintenanceFee: {
       type: [Number, String],
-      default: null
+      default: null,
     },
     address: {
       type: String,
-      default: ''
+      default: "",
     },
     areaM2: {
       type: [Number, String],
-      default: null
+      default: null,
     },
     floor: {
       type: [Number, String],
-      default: null
+      default: null,
     },
     rating: {
       type: [Number, String],
-      default: null
+      default: null,
     },
     reviewCount: {
       type: [Number, String],
-      default: null
+      default: null,
     },
     isFavorite: {
       type: Boolean,
-      default: false
+      default: false,
     },
     // 옵션 props
     showFavoriteButton: {
       type: Boolean,
-      default: true
+      default: true,
     },
     showRating: {
       type: Boolean,
-      default: true
+      default: true,
     },
     showReviewCount: {
       type: Boolean,
-      default: true
-    }
+      default: true,
+    },
   },
-  emits: ['toggleFavorite'],
+  emits: ["toggleFavorite"],
   setup(props, { emit }) {
     // listing 객체가 있으면 우선 사용, 없으면 개별 props 사용
     const listingData = computed(() => {
       if (props.listing) {
-        return props.listing
+        return props.listing;
       }
       return {
         id: props.id,
@@ -193,16 +217,16 @@ export default {
         monthly_rent: props.monthlyRent,
         maintenance_fee: props.maintenanceFee,
         building: {
-          road_address: props.address
+          road_address: props.address,
         },
         area_m2: props.areaM2,
         floor: props.floor,
         rating: props.rating,
         review_count: props.reviewCount,
         is_favorite: props.isFavorite,
-        isFavorite: props.isFavorite
-      }
-    })
+        isFavorite: props.isFavorite,
+      };
+    });
 
     // 계산된 속성들
     const imageUrl = computed(() => {
@@ -210,57 +234,78 @@ export default {
         listingData.value.image ||
         listingData.value.imageUrl ||
         listingData.value.image_url ||
-        ''
-      )
-    })
+        ""
+      );
+    });
 
     const title = computed(() => {
-      return listingData.value.title || ''
-    })
+      return listingData.value.title || "";
+    });
 
     const roomType = computed(() => {
-      return listingData.value.room_type || listingData.value.roomType || ''
-    })
+      return listingData.value.room_type || listingData.value.roomType || "";
+    });
+
+    const buildingName = computed(() => {
+      if (listingData.value.building) {
+        return (
+          listingData.value.building.name ||
+          listingData.value.buildingName ||
+          ""
+        );
+      }
+      return "";
+    });
 
     const address = computed(() => {
       if (listingData.value.building) {
         return (
           listingData.value.building.road_address ||
           listingData.value.building.roadAddress ||
-          ''
-        )
+          ""
+        );
       }
-      return ''
-    })
+      return "";
+    });
 
     const deposit = computed(() => {
-      return listingData.value.deposit || null
-    })
+      return listingData.value.deposit || null;
+    });
 
     const monthlyRent = computed(() => {
-      return listingData.value.monthly_rent || listingData.value.monthlyRent || null
-    })
+      return (
+        listingData.value.monthly_rent || listingData.value.monthlyRent || null
+      );
+    });
 
     const maintenanceFee = computed(() => {
-      return listingData.value.maintenance_fee || listingData.value.maintenanceFee || null
-    })
+      return (
+        listingData.value.maintenance_fee ||
+        listingData.value.maintenanceFee ||
+        null
+      );
+    });
 
     const areaM2 = computed(() => {
-      return listingData.value.area_m2 || listingData.value.areaM2 || null
-    })
+      return listingData.value.area_m2 || listingData.value.areaM2 || null;
+    });
 
     const floor = computed(() => {
-      return listingData.value.floor !== undefined ? listingData.value.floor : null
-    })
+      return listingData.value.floor !== undefined
+        ? listingData.value.floor
+        : null;
+    });
 
     const rating = computed(() => {
-      const value = listingData.value.rating
-      return value !== undefined && value !== null ? Number(value) : null
-    })
+      const value = listingData.value.rating;
+      return value !== undefined && value !== null ? Number(value) : null;
+    });
 
     const reviewCount = computed(() => {
-      return listingData.value.review_count || listingData.value.reviewCount || null
-    })
+      return (
+        listingData.value.review_count || listingData.value.reviewCount || null
+      );
+    });
 
     const isFavorite = computed(() => {
       const value =
@@ -268,24 +313,25 @@ export default {
           ? listingData.value.is_favorite
           : listingData.value.isFavorite !== undefined
           ? listingData.value.isFavorite
-          : false
+          : false;
 
-      return Boolean(value)
-    })
+      return Boolean(value);
+    });
 
     const handleToggleFavorite = () => {
-      const listingId = listingData.value.id
-      emit('toggleFavorite', listingId)
-    }
+      const listingId = listingData.value.id;
+      emit("toggleFavorite", listingId);
+    };
 
     const handleImageError = (event) => {
-      event.target.style.display = 'none'
-    }
+      event.target.style.display = "none";
+    };
 
     return {
       imageUrl,
       title,
       roomType,
+      buildingName,
       address,
       deposit,
       monthlyRent,
@@ -296,10 +342,10 @@ export default {
       reviewCount,
       isFavorite,
       handleToggleFavorite,
-      handleImageError
-    }
-  }
-}
+      handleImageError,
+    };
+  },
+};
 </script>
 
 <style scoped>
@@ -307,4 +353,3 @@ export default {
   @apply bg-white rounded-lg shadow-sm border border-gray-100;
 }
 </style>
-
