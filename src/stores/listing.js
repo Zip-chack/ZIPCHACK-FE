@@ -1,6 +1,8 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
 import { listingAPI } from "@/utils/api";
+import { useAuthStore } from "@/stores/auth";
+import router from "@/router";
 
 export const useListingStore = defineStore("listing", () => {
   const listings = ref([]);
@@ -131,6 +133,16 @@ export const useListingStore = defineStore("listing", () => {
 
   // 찜하기 토글
   async function toggleFavorite(listingId) {
+    // 로그인 체크
+    const authStore = useAuthStore();
+    const token = localStorage.getItem("token");
+
+    if (!token || !authStore.isLoggedIn) {
+      alert("찜하기 기능을 사용하려면 로그인이 필요합니다.");
+      router.push("/login");
+      return { success: false, error: "로그인이 필요합니다." };
+    }
+
     try {
       const response = await listingAPI.toggleFavorite(listingId);
       const isFavorite = response.data.is_favorite || response.data.isFavorite;

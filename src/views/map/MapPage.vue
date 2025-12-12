@@ -59,6 +59,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useBuildingStore } from "@/stores/building";
+import { useListingStore } from "@/stores/listing";
 import { kakaoMapAPI, publicDataAPI, buildingAPI } from "@/utils/api";
 import BuildingSidebar from "@/components/map/BuildingSidebar.vue";
 
@@ -69,6 +70,7 @@ export default {
   },
   setup() {
     const buildingStore = useBuildingStore();
+    const listingStore = useListingStore();
     const router = useRouter();
 
     const searchQuery = ref(""); // 사이드바 검색
@@ -681,20 +683,15 @@ export default {
     }
 
     async function toggleFavorite(id) {
-      // 찜하기 기능은 listing store를 사용하거나 직접 API 호출
-      // 여기서는 간단하게 router로 이동하도록 처리
-      // 실제로는 listing store의 toggleFavorite를 사용하는 것이 좋습니다
-      try {
-        const { listingAPI } = await import("@/utils/api");
-        await listingAPI.toggleFavorite(id);
+      // listing store의 toggleFavorite를 사용 (로그인 체크 포함)
+      const result = await listingStore.toggleFavorite(id);
+      if (result.success) {
         // 목록 업데이트
         const listing = buildingListings.value.find((l) => l.id === id);
         if (listing) {
           listing.is_favorite = !listing.is_favorite;
           listing.isFavorite = !listing.isFavorite;
         }
-      } catch (error) {
-        console.error("찜하기 실패:", error);
       }
     }
 
