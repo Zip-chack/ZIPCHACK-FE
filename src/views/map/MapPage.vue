@@ -86,6 +86,8 @@ export default {
     let markers = [];
     let rentMarkers = []; // 실거래가 마커
     let boundsCheckTimer = null;
+    let currentInfoWindow = null; // 현재 열린 인포윈도우
+    let currentMarker = null; // 현재 선택된 마커
 
     const buildings = computed(() => buildingStore.buildings);
 
@@ -269,6 +271,10 @@ export default {
     function displayMarkers() {
       if (!map || !buildings.value.length) return;
 
+      // 현재 선택된 빌딩 정보 저장 (인포윈도우 복원을 위해)
+      const previousSelectedBuilding = selectedBuilding.value;
+      const previousMarker = currentMarker;
+
       // 기존 마커 제거
       markers.forEach((marker) => marker.setMap(null));
       markers = [];
@@ -295,25 +301,92 @@ export default {
           map: map,
         });
 
-        // 인포윈도우 생성
-        const infowindow = new window.kakao.maps.InfoWindow({
-          content: `<div style="padding:5px;font-size:12px;min-width:100px;">
-            <strong>${building.name}</strong><br/>
-            <span>평점: ${building.rating.toFixed(1)}</span>
-          </div>`,
-        });
+        // 마커에 빌딩 정보 저장 (나중에 찾기 위해)
+        marker.building = building;
 
         // 마커 클릭 이벤트
         window.kakao.maps.event.addListener(marker, "click", () => {
           selectBuilding(building);
-          infowindow.open(map, marker);
+          showBuildingInfoWindow(building, marker);
         });
 
         markers.push(marker);
       });
+
+      // 이전에 선택된 빌딩이 있었고, 해당 빌딩이 여전히 존재하면 인포윈도우 다시 열기
+      if (previousSelectedBuilding && previousMarker) {
+        const restoredMarker = markers.find((marker) => {
+          if (!marker.building) return false;
+          // ID로 비교 (가장 정확)
+          if (marker.building.id && previousSelectedBuilding.id) {
+            return (
+              String(marker.building.id) === String(previousSelectedBuilding.id)
+            );
+          }
+          // ID가 없으면 좌표와 이름으로 비교
+          return (
+            Math.abs(marker.building.lat - previousSelectedBuilding.lat) <
+              0.0001 &&
+            Math.abs(marker.building.lng - previousSelectedBuilding.lng) <
+              0.0001 &&
+            marker.building.name === previousSelectedBuilding.name
+          );
+        });
+
+        if (restoredMarker) {
+          // 빌딩 정보 업데이트 (최신 정보로)
+          const updatedBuilding = restoredMarker.building;
+          selectedBuilding.value = updatedBuilding;
+          showBuildingInfoWindow(updatedBuilding, restoredMarker);
+        }
+      }
     }
 
-    // buildings가 변경되면 마커 업데이트
+    // 선택한 빌딩의 인포윈도우 표시
+    function showBuildingInfoWindow(building, marker) {
+      if (!map || !building || !marker) return;
+
+      // 기존 인포윈도우 닫기
+      if (currentInfoWindow) {
+        currentInfoWindow.close();
+        currentInfoWindow = null;
+      }
+
+      // 새 인포윈도우 생성 및 표시
+      const infoContent = `
+        <div style="padding: 12px 14px; min-width: 180px; max-width: 250px; word-wrap: break-word; word-break: break-word; line-height: 1.5;">
+          <div style="font-weight: 600; font-size: 14px; color: #111827; margin-bottom: 6px; word-wrap: break-word; word-break: break-word;">
+            ${building.name || "건물명 없음"}
+          </div>
+          <div style="font-size: 13px; color: #6b7280; word-wrap: break-word;">
+            평점 ${(building.rating || 0).toFixed(1)}
+            ${building.review_count ? ` (${building.review_count})` : ""}
+          </div>
+        </div>
+      `;
+
+      currentInfoWindow = new window.kakao.maps.InfoWindow({
+        content: infoContent,
+        removable: true, // 닫기 버튼 표시
+        disableAutoPan: false, // 자동 패닝 활성화
+      });
+
+      // 인포윈도우 닫기 이벤트 리스너
+      window.kakao.maps.event.addListener(
+        currentInfoWindow,
+        "closeclick",
+        () => {
+          selectedBuilding.value = null;
+          currentInfoWindow = null;
+          currentMarker = null;
+        }
+      );
+
+      currentInfoWindow.open(map, marker);
+      currentMarker = marker;
+    }
+
+    // buildings가 변경되면 마커 업데이트 (인포윈도우는 유지)
     watch(
       buildings,
       () => {
@@ -322,6 +395,38 @@ export default {
         }
       },
       { deep: true }
+    );
+
+    // selectedBuilding이 변경되면 인포윈도우 업데이트
+    watch(
+      () => selectedBuilding.value,
+      (newBuilding, oldBuilding) => {
+        if (!newBuilding && currentInfoWindow) {
+          // 선택 해제 시 인포윈도우 닫기
+          currentInfoWindow.close();
+          currentInfoWindow = null;
+          currentMarker = null;
+        } else if (newBuilding && newBuilding !== oldBuilding) {
+          // 새 빌딩 선택 시 인포윈도우 표시 (마커는 displayMarkers에서 처리)
+          const buildingMarker = markers.find((marker) => {
+            if (!marker.building) return false;
+            // ID로 비교
+            if (marker.building.id && newBuilding.id) {
+              return String(marker.building.id) === String(newBuilding.id);
+            }
+            // 좌표와 이름으로 비교
+            return (
+              Math.abs(marker.building.lat - newBuilding.lat) < 0.0001 &&
+              Math.abs(marker.building.lng - newBuilding.lng) < 0.0001 &&
+              marker.building.name === newBuilding.name
+            );
+          });
+
+          if (buildingMarker) {
+            showBuildingInfoWindow(newBuilding, buildingMarker);
+          }
+        }
+      }
     );
 
     // 지도 경계 변경을 감지하기 위한 ref
@@ -458,6 +563,25 @@ export default {
         );
         map.setCenter(moveLatLon);
         map.setLevel(3);
+
+        // 선택한 빌딩의 마커 찾기 (마커에 저장된 빌딩 정보로 비교)
+        const buildingMarker = markers.find((marker) => {
+          if (!marker.building) return false;
+          // ID로 비교 (가장 정확)
+          if (marker.building.id && building.id) {
+            return String(marker.building.id) === String(building.id);
+          }
+          // ID가 없으면 좌표로 비교
+          return (
+            Math.abs(marker.building.lat - building.lat) < 0.0001 &&
+            Math.abs(marker.building.lng - building.lng) < 0.0001 &&
+            marker.building.name === building.name
+          );
+        });
+
+        if (buildingMarker) {
+          showBuildingInfoWindow(building, buildingMarker);
+        }
       }
 
       // Building ID 확인 및 처리
