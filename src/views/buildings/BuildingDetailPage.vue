@@ -108,9 +108,6 @@
         <!-- Contact Card -->
         <ContactCard />
 
-        <!-- Building Info -->
-        <BuildingInfoCard :building="building" />
-
         <!-- Commerce Radar Chart -->
         <CommerceRadarChart
           v-if="building && building.lat && building.lng"
@@ -156,7 +153,6 @@ import { reviewAPI } from "@/utils/api";
 import ReviewCard from "@/components/common/ReviewCard.vue";
 import NearbyCommerceInfo from "@/components/common/NearbyCommerceInfo.vue";
 import ContactCard from "@/components/common/ContactCard.vue";
-import BuildingInfoCard from "@/components/common/BuildingInfoCard.vue";
 import CommerceRadarChart from "@/components/common/CommerceRadarChart.vue";
 import CommerceAnalysis from "@/components/common/CommerceAnalysis.vue";
 import RoadviewModal from "@/components/common/RoadviewModal.vue";
@@ -167,7 +163,6 @@ export default {
     ReviewCard,
     NearbyCommerceInfo,
     ContactCard,
-    BuildingInfoCard,
     CommerceRadarChart,
     CommerceAnalysis,
     RoadviewModal,
