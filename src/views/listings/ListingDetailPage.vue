@@ -98,7 +98,6 @@ import ReviewCard from "@/components/common/ReviewCard.vue";
 import ListingBasicInfo from "@/components/listings/ListingBasicInfo.vue";
 import NearbyCommerceInfo from "@/components/common/NearbyCommerceInfo.vue";
 import ContactCard from "@/components/common/ContactCard.vue";
-import BuildingInfoCard from "@/components/common/BuildingInfoCard.vue";
 import CommerceRadarChart from "@/components/common/CommerceRadarChart.vue";
 import CommerceAnalysis from "@/components/common/CommerceAnalysis.vue";
 
@@ -109,7 +108,6 @@ export default {
     ListingBasicInfo,
     NearbyCommerceInfo,
     ContactCard,
-    BuildingInfoCard,
     CommerceRadarChart,
     CommerceAnalysis,
   },
