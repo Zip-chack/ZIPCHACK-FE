@@ -1,8 +1,5 @@
 import axios from "axios";
-
-// API 기본 URL 설정
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api";
+import { API_BASE_URL, API_ENDPOINTS } from "@/config/api";
 
 // axios 인스턴스 생성
 const apiClient = axios.create({
@@ -44,75 +41,75 @@ apiClient.interceptors.response.use(
 // Auth API
 export const authAPI = {
   login: (email, password) =>
-    apiClient.post("/auth/login", { email, password }),
+    apiClient.post(API_ENDPOINTS.AUTH.LOGIN, { email, password }),
 
-  register: (userData) => apiClient.post("/auth/register", userData),
+  register: (userData) => apiClient.post(API_ENDPOINTS.AUTH.REGISTER, userData),
 
-  logout: () => apiClient.post("/auth/logout"),
+  logout: () => apiClient.post(API_ENDPOINTS.AUTH.LOGOUT),
 
-  getCurrentUser: () => apiClient.get("/auth/me"),
+  getCurrentUser: () => apiClient.get(API_ENDPOINTS.AUTH.ME),
 };
 
 // Listing API
 export const listingAPI = {
-  getListings: (params) => apiClient.get("/listings", { params }),
+  getListings: (params) => apiClient.get(API_ENDPOINTS.LISTINGS.BASE, { params }),
 
-  getListingById: (id) => apiClient.get(`/listings/${id}`),
+  getListingById: (id) => apiClient.get(API_ENDPOINTS.LISTINGS.BY_ID(id)),
 
-  createListing: (listingData) => apiClient.post("/listings", listingData),
+  createListing: (listingData) => apiClient.post(API_ENDPOINTS.LISTINGS.BASE, listingData),
 
   updateListing: (id, listingData) =>
-    apiClient.put(`/listings/${id}`, listingData),
+    apiClient.put(API_ENDPOINTS.LISTINGS.BY_ID(id), listingData),
 
-  deleteListing: (id) => apiClient.delete(`/listings/${id}`),
+  deleteListing: (id) => apiClient.delete(API_ENDPOINTS.LISTINGS.BY_ID(id)),
 
-  toggleFavorite: (id) => apiClient.post(`/listings/${id}/favorite`),
+  toggleFavorite: (id) => apiClient.post(API_ENDPOINTS.LISTINGS.FAVORITE(id)),
 
-  getFavorites: () => apiClient.get("/listings/favorites"),
+  getFavorites: () => apiClient.get(API_ENDPOINTS.LISTINGS.FAVORITES),
 };
 
 // Building API
 export const buildingAPI = {
-  getBuildings: (params) => apiClient.get("/buildings", { params }),
+  getBuildings: (params) => apiClient.get(API_ENDPOINTS.BUILDINGS.BASE, { params }),
 
-  getBuildingById: (id) => apiClient.get(`/buildings/${id}`),
+  getBuildingById: (id) => apiClient.get(API_ENDPOINTS.BUILDINGS.BY_ID(id)),
 
   searchBuildings: (query) =>
-    apiClient.get("/buildings/search", { params: { q: query } }),
+    apiClient.get(API_ENDPOINTS.BUILDINGS.SEARCH, { params: { q: query } }),
 
-  createBuilding: (buildingData) => apiClient.post("/buildings", buildingData),
+  createBuilding: (buildingData) => apiClient.post(API_ENDPOINTS.BUILDINGS.BASE, buildingData),
 
   getBuildingListings: (buildingId) =>
-    apiClient.get(`/buildings/${buildingId}/listings`),
+    apiClient.get(API_ENDPOINTS.BUILDINGS.LISTINGS(buildingId)),
 };
 
 // Review API
 export const reviewAPI = {
   getListingReviews: (listingId) =>
-    apiClient.get(`/listings/${listingId}/reviews`),
+    apiClient.get(API_ENDPOINTS.LISTINGS.REVIEWS(listingId)),
 
   createListingReview: (listingId, reviewData) =>
-    apiClient.post(`/listings/${listingId}/reviews`, reviewData),
+    apiClient.post(API_ENDPOINTS.LISTINGS.REVIEW(listingId), reviewData),
 
   getBuildingReviews: (buildingId) =>
-    apiClient.get(`/buildings/${buildingId}/reviews`),
+    apiClient.get(API_ENDPOINTS.BUILDINGS.REVIEWS(buildingId)),
 
   createBuildingReview: (buildingId, reviewData) =>
-    apiClient.post(`/buildings/${buildingId}/reviews`, reviewData),
+    apiClient.post(API_ENDPOINTS.BUILDINGS.REVIEW(buildingId), reviewData),
 
   updateReview: (reviewId, reviewData) =>
-    apiClient.put(`/reviews/${reviewId}`, reviewData),
+    apiClient.put(API_ENDPOINTS.REVIEWS.BY_ID(reviewId), reviewData),
 
-  deleteReview: (reviewId) => apiClient.delete(`/reviews/${reviewId}`),
+  deleteReview: (reviewId) => apiClient.delete(API_ENDPOINTS.REVIEWS.BY_ID(reviewId)),
 };
 
 // Kakao Map API
 export const kakaoMapAPI = {
   searchAddress: (query) =>
-    apiClient.get("/kakao/address", { params: { query } }),
+    apiClient.get(API_ENDPOINTS.KAKAO.ADDRESS, { params: { query } }),
 
   searchKeyword: (query, lat, lng, radius) =>
-    apiClient.get("/kakao/keyword", {
+    apiClient.get(API_ENDPOINTS.KAKAO.KEYWORD, {
       params: {
         query,
         ...(lat && lng && { lat, lng }),
@@ -121,20 +118,20 @@ export const kakaoMapAPI = {
     }),
 
   coordToAddress: (lat, lng) =>
-    apiClient.get("/kakao/coord2address", { params: { lat, lng } }),
+    apiClient.get(API_ENDPOINTS.KAKAO.COORD2ADDRESS, { params: { lat, lng } }),
 
   searchBuildingsInBounds: (swLat, swLng, neLat, neLng) =>
-    apiClient.get("/kakao/buildings-in-bounds", {
+    apiClient.get(API_ENDPOINTS.KAKAO.BUILDINGS_IN_BOUNDS, {
       params: { swLat, swLng, neLat, neLng },
     }),
 
   getNearbyCommerceInfo: (lat, lng, radius) =>
-    apiClient.get("/kakao/nearby-commerce", {
+    apiClient.get(API_ENDPOINTS.KAKAO.NEARBY_COMMERCE, {
       params: { lat, lng, ...(radius && { radius }) },
     }),
 
   getCommerceReport: (lat, lng, radius) =>
-    apiClient.get("/commerce-analysis/report", {
+    apiClient.get(API_ENDPOINTS.COMMERCE.REPORT, {
       params: { lat, lng, ...(radius && { radius }) },
     }),
 };
@@ -142,7 +139,7 @@ export const kakaoMapAPI = {
 // Public Data API
 export const publicDataAPI = {
   getApartmentRentData: (lawdCd, dealYmd) =>
-    apiClient.get("/public-data/apartment-rent", {
+    apiClient.get(API_ENDPOINTS.PUBLIC_DATA.APARTMENT_RENT, {
       params: {
         lawdCd,
         ...(dealYmd && { dealYmd }),
