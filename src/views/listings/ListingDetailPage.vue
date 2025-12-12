@@ -51,9 +51,6 @@
         <!-- Contact Card -->
         <ContactCard />
 
-        <!-- Building Info -->
-        <BuildingInfoCard :building="listing.building" />
-
         <!-- Commerce Radar Chart -->
         <CommerceRadarChart
           v-if="
