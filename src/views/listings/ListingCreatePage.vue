@@ -11,39 +11,60 @@
             <label class="block text-sm font-medium text-gray-700 mb-2"
               >건물 검색</label
             >
-            <input
-              v-model="form.buildingSearch"
-              type="text"
-              placeholder="건물명 또는 주소로 검색"
-              class="input"
-              @input="searchBuildings"
-            />
-          </div>
-
-          <!-- 선택된 건물 표시 -->
-          <div
-            v-if="form.selectedBuilding"
-            class="mb-4 p-4 bg-primary-50 border border-primary-200 rounded-lg"
-          >
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="font-medium text-gray-900">
-                  {{ form.selectedBuilding.name }}
-                </p>
-                <p class="text-sm text-gray-500">
-                  {{ form.selectedBuilding.road_address }}
-                </p>
-              </div>
-              <button
-                type="button"
-                @click="
-                  form.selectedBuilding = null;
-                  form.buildingSearch = '';
-                "
-                class="text-gray-400 hover:text-gray-600"
-              >
+            <!-- 건물 검색 버튼 (지도 모달 열기) -->
+            <button
+              type="button"
+              @click="showMapSearchModal = true"
+              class="w-full input text-left cursor-pointer hover:border-primary-400 transition-colors flex items-center justify-between"
+              :class="{
+                'bg-gray-50': !form.selectedBuilding,
+                'bg-primary-50 border-primary-300': form.selectedBuilding,
+              }"
+            >
+              <div class="flex items-center flex-1 min-w-0">
                 <svg
-                  class="w-5 h-5"
+                  class="w-5 h-5 text-gray-400 mr-2 flex-shrink-0"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                  />
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                  />
+                </svg>
+                <div class="flex-1 min-w-0">
+                  <p
+                    v-if="form.selectedBuilding"
+                    class="font-medium text-gray-900 truncate"
+                  >
+                    {{ form.selectedBuilding.name }}
+                  </p>
+                  <p v-else class="text-gray-400">지도에서 건물을 검색하세요</p>
+                  <p
+                    v-if="form.selectedBuilding"
+                    class="text-sm text-gray-500 truncate"
+                  >
+                    {{ form.selectedBuilding.road_address }}
+                  </p>
+                </div>
+              </div>
+              <div class="flex items-center gap-2 ml-2 flex-shrink-0">
+                <svg
+                  v-if="form.selectedBuilding"
+                  @click.stop="
+                    form.selectedBuilding = null;
+                    form.buildingSearch = '';
+                  "
+                  class="w-5 h-5 text-gray-400 hover:text-gray-600 transition-colors"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -55,42 +76,20 @@
                     d="M6 18L18 6M6 6l12 12"
                   />
                 </svg>
-              </button>
-            </div>
-          </div>
-
-          <!-- 건물 검색 결과 -->
-
-          <div
-            v-if="searchedBuildings.length > 0 && !form.selectedBuilding"
-            class="border rounded-lg divide-y"
-          >
-            <button
-              v-for="building in searchedBuildings"
-              :key="building.id"
-              type="button"
-              @click="selectBuilding(building)"
-              class="w-full p-4 text-left hover:bg-gray-50 flex justify-between items-center"
-              :class="{
-                'bg-primary-50': form.selectedBuilding?.id === building.id,
-              }"
-            >
-              <div>
-                <p class="font-medium text-gray-900">{{ building.name }}</p>
-                <p class="text-sm text-gray-500">{{ building.road_address }}</p>
+                <svg
+                  class="w-5 h-5 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
               </div>
-              <svg
-                v-if="form.selectedBuilding?.id === building.id"
-                class="w-5 h-5 text-primary-500"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
-                <path
-                  fill-rule="evenodd"
-                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                  clip-rule="evenodd"
-                />
-              </svg>
             </button>
           </div>
         </div>
@@ -213,6 +212,13 @@
         <button type="submit" class="btn-primary">등록하기</button>
       </div>
     </form>
+
+    <!-- 지도 검색 모달 -->
+    <BuildingSearchModal
+      :is-open="showMapSearchModal"
+      @close="showMapSearchModal = false"
+      @select="handleBuildingSelectFromMap"
+    />
   </div>
 </template>
 
@@ -223,9 +229,13 @@ import { useBuildingStore } from "@/stores/building";
 import { useListingStore } from "@/stores/listing";
 import { useAuthStore } from "@/stores/auth";
 import { buildingAPI } from "@/utils/api";
+import BuildingSearchModal from "@/components/map/BuildingSearchModal.vue";
 
 export default {
   name: "ListingCreatePage",
+  components: {
+    BuildingSearchModal,
+  },
   setup() {
     const router = useRouter();
     const route = useRoute();
@@ -246,22 +256,100 @@ export default {
       description: "",
     });
 
-    const searchedBuildings = ref([]);
+    const showMapSearchModal = ref(false);
 
-    async function searchBuildings() {
-      if (!form.value.buildingSearch) {
-        searchedBuildings.value = [];
-        return;
-      }
+    async function handleBuildingSelectFromMap(building) {
+      // 지도에서 선택한 건물 처리
       try {
-        const result = await buildingStore.searchBuildings(
-          form.value.buildingSearch
-        );
-        if (result.success) {
-          searchedBuildings.value = buildingStore.buildings;
+        // Building을 찾거나 생성
+        let buildingId = building.id;
+
+        // ID가 숫자가 아니거나 문자열인 경우 (카카오맵에서 가져온 경우)
+        if (
+          !buildingId ||
+          typeof buildingId !== "number" ||
+          String(buildingId).startsWith("kakao_")
+        ) {
+          buildingId = await findOrCreateBuilding(building);
+        } else {
+          // 숫자 ID인 경우 DB에 존재하는지 확인
+          try {
+            await buildingAPI.getBuildingById(buildingId);
+          } catch (error) {
+            // DB에 없으면 생성
+            buildingId = await findOrCreateBuilding(building);
+          }
         }
-      } catch (err) {
-        console.error("건물 검색 에러:", err);
+
+        if (buildingId) {
+          // Building 정보 가져오기
+          const response = await buildingAPI.getBuildingById(buildingId);
+          const buildingData = response.data;
+
+          const selectedBuilding = {
+            id: buildingData.id,
+            name: buildingData.name,
+            road_address:
+              buildingData.roadAddress || buildingData.road_address || "",
+          };
+
+          form.value.selectedBuilding = selectedBuilding;
+          form.value.buildingSearch = `${buildingData.name} ${
+            buildingData.roadAddress || ""
+          }`.trim();
+        }
+      } catch (error) {
+        console.error("건물 선택 처리 실패:", error);
+        alert("건물을 선택하는데 실패했습니다.");
+      }
+    }
+
+    async function findOrCreateBuilding(building) {
+      try {
+        const buildingName = building.name || building.placeName || "";
+        const address =
+          building.road_address ||
+          building.roadAddress ||
+          building.address ||
+          "";
+
+        // Building 검색
+        const searchQuery = `${buildingName} ${address}`.trim();
+        if (searchQuery) {
+          const searchResponse = await buildingAPI.searchBuildings(searchQuery);
+
+          // 검색 결과가 있으면 첫 번째 결과 사용
+          if (searchResponse.data && searchResponse.data.length > 0) {
+            // 주소와 이름이 비슷한 Building 찾기
+            const matchedBuilding = searchResponse.data.find(
+              (b) =>
+                b.name === buildingName &&
+                (b.roadAddress === address ||
+                  b.roadAddress?.includes(address) ||
+                  address.includes(b.roadAddress))
+            );
+            if (matchedBuilding) {
+              return matchedBuilding.id;
+            }
+            // 정확히 일치하는 것이 없으면 첫 번째 결과 사용
+            return searchResponse.data[0].id;
+          }
+        }
+
+        // Building이 없으면 생성
+        const buildingData = {
+          name: buildingName || "건물",
+          roadAddress: address,
+          lat: building.lat,
+          lng: building.lng,
+          builtYear: building.built_year || building.builtYear || null,
+        };
+
+        const createResponse = await buildingAPI.createBuilding(buildingData);
+        return createResponse.data.id;
+      } catch (error) {
+        console.error("Building 찾기/생성 실패:", error);
+        return null;
       }
     }
 
@@ -298,8 +386,6 @@ export default {
           form.value.buildingSearch = `${building.name} ${
             building.roadAddress || ""
           }`.trim();
-          // searchedBuildings에도 추가하여 UI에 표시
-          searchedBuildings.value = [selectedBuilding];
         } catch (error) {
           console.error("건물 정보를 불러오는데 실패했습니다:", error);
           alert(
@@ -309,10 +395,6 @@ export default {
         }
       }
     });
-
-    function selectBuilding(building) {
-      form.value.selectedBuilding = building;
-    }
 
     async function handleSubmit() {
       // 로그인 체크
@@ -390,10 +472,9 @@ export default {
 
     return {
       form,
-      searchedBuildings,
-      selectBuilding,
-      searchBuildings,
+      showMapSearchModal,
       handleSubmit,
+      handleBuildingSelectFromMap,
     };
   },
 };
