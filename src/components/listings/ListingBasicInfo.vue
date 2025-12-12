@@ -33,7 +33,7 @@
     <!-- Basic Info Card -->
     <div class="card p-6">
       <div class="flex items-start justify-between mb-4">
-        <div>
+        <div class="flex-1">
           <div class="flex items-center gap-2 mb-5">
             <span
               v-if="roomType"
@@ -51,27 +51,51 @@
           <h1 class="text-2xl font-bold text-gray-900">{{ title }}</h1>
           <p v-if="address" class="text-gray-600 mt-1">{{ address }}</p>
         </div>
-        <button
-          v-if="showFavoriteButton"
-          @click="handleToggleFavorite"
-          class="p-3 rounded-full border border-gray-200 hover:bg-gray-50 transition-colors"
-          :aria-label="isFavorite ? '찜하기 해제' : '찜하기'"
-        >
-          <svg
-            class="w-6 h-6 transition-colors"
-            :class="isFavorite ? 'text-red-500 fill-current' : 'text-gray-400'"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+        <div class="flex items-center gap-2 ml-4">
+          <button
+            v-if="buildingLat && buildingLng"
+            @click="$emit('show-roadview')"
+            class="btn-secondary flex items-center gap-2 whitespace-nowrap"
           >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-            />
-          </svg>
-        </button>
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+              />
+            </svg>
+            로드뷰
+          </button>
+          <button
+            v-if="showFavoriteButton"
+            @click="handleToggleFavorite"
+            class="p-3 rounded-full border border-gray-200 hover:bg-gray-50 transition-colors"
+            :aria-label="isFavorite ? '찜하기 해제' : '찜하기'"
+          >
+            <svg
+              class="w-6 h-6 transition-colors"
+              :class="
+                isFavorite ? 'text-red-500 fill-current' : 'text-gray-400'
+              "
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+              />
+            </svg>
+          </button>
+        </div>
       </div>
 
       <!-- Price Info -->
@@ -201,7 +225,7 @@ export default {
       default: true,
     },
   },
-  emits: ["toggleFavorite"],
+  emits: ["toggleFavorite", "show-roadview"],
   setup(props, { emit }) {
     // listing 객체가 있으면 우선 사용, 없으면 개별 props 사용
     const listingData = computed(() => {
@@ -266,6 +290,20 @@ export default {
         );
       }
       return "";
+    });
+
+    const buildingLat = computed(() => {
+      if (listingData.value.building) {
+        return listingData.value.building.lat || null;
+      }
+      return null;
+    });
+
+    const buildingLng = computed(() => {
+      if (listingData.value.building) {
+        return listingData.value.building.lng || null;
+      }
+      return null;
     });
 
     const deposit = computed(() => {
@@ -333,6 +371,8 @@ export default {
       roomType,
       buildingName,
       address,
+      buildingLat,
+      buildingLng,
       deposit,
       monthlyRent,
       maintenanceFee,

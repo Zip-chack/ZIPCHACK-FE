@@ -5,10 +5,34 @@
       <div class="lg:col-span-2 space-y-6">
         <!-- Building Basic Info -->
         <div class="card p-6">
-          <h1 class="text-2xl font-bold text-gray-900 mb-2">
-            {{ building.name }}
-          </h1>
-          <p class="text-gray-600 mb-6">{{ building.road_address }}</p>
+          <div class="flex items-start justify-between mb-4">
+            <div class="flex-1">
+              <h1 class="text-2xl font-bold text-gray-900 mb-2">
+                {{ building.name }}
+              </h1>
+              <p class="text-gray-600 mb-6">{{ building.road_address }}</p>
+            </div>
+            <button
+              v-if="building.lat && building.lng"
+              @click="showRoadview = true"
+              class="btn-secondary flex items-center gap-2 whitespace-nowrap"
+            >
+              <svg
+                class="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+                />
+              </svg>
+              로드뷰 보기
+            </button>
+          </div>
 
           <!-- Stats Grid -->
           <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -113,6 +137,15 @@
       </router-link>
     </div>
   </div>
+
+  <!-- 로드뷰 모달 -->
+  <RoadviewModal
+    v-if="building && building.lat && building.lng"
+    :is-open="showRoadview"
+    :lat="building.lat"
+    :lng="building.lng"
+    @close="showRoadview = false"
+  />
 </template>
 
 <script>
@@ -126,6 +159,7 @@ import ContactCard from "@/components/common/ContactCard.vue";
 import BuildingInfoCard from "@/components/common/BuildingInfoCard.vue";
 import CommerceRadarChart from "@/components/common/CommerceRadarChart.vue";
 import CommerceAnalysis from "@/components/common/CommerceAnalysis.vue";
+import RoadviewModal from "@/components/common/RoadviewModal.vue";
 
 export default {
   name: "BuildingDetailPage",
@@ -136,6 +170,7 @@ export default {
     BuildingInfoCard,
     CommerceRadarChart,
     CommerceAnalysis,
+    RoadviewModal,
   },
   setup() {
     const route = useRoute();
@@ -145,6 +180,7 @@ export default {
       buildingStore.getBuildingById(route.params.id)
     );
     const reviews = ref([]);
+    const showRoadview = ref(false);
 
     onMounted(async () => {
       await buildingStore.fetchBuildingById(route.params.id);
@@ -169,6 +205,7 @@ export default {
     return {
       building,
       reviews,
+      showRoadview,
     };
   },
 };
