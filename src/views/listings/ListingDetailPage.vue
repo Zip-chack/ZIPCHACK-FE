@@ -141,10 +141,12 @@ export default {
     onMounted(async () => {
       await listingStore.fetchListingById(route.params.id);
 
-      // 리뷰 조회
+      // 매물 리뷰 조회
       try {
-        const response = await reviewAPI.getListingReviews(route.params.id);
-        reviews.value = response.data.map((review) => ({
+        const listingReviewsResponse = await reviewAPI.getListingReviews(
+          route.params.id
+        );
+        const listingReviews = listingReviewsResponse.data.map((review) => ({
           id: review.id,
           user: review.user,
           rating_overall: review.ratingOverall,
@@ -154,7 +156,49 @@ export default {
           title: review.title,
           content: review.content,
           created_at: review.createdAt,
+          type: "listing", // 매물 리뷰임을 표시
         }));
+
+        // 해당 매물이 속한 건물의 리뷰도 가져오기
+        if (listing.value?.building?.id) {
+          try {
+            const buildingReviewsResponse = await reviewAPI.getBuildingReviews(
+              listing.value.building.id
+            );
+            const buildingReviews = buildingReviewsResponse.data.map(
+              (review) => ({
+                id: review.id,
+                user: review.user,
+                rating_overall: review.ratingOverall,
+                rating_noise: review.ratingNoise,
+                rating_landlord: review.ratingLandlord,
+                rating_facility: review.ratingFacility,
+                title: review.title,
+                content: review.content,
+                created_at: review.createdAt,
+                type: "building", // 건물 리뷰임을 표시
+                building: listing.value.building, // 건물 정보 추가
+              })
+            );
+
+            // 매물 리뷰와 건물 리뷰 합치기 (최신순 정렬)
+            const allReviews = [...listingReviews, ...buildingReviews];
+            allReviews.sort((a, b) => {
+              const dateA = new Date(a.created_at || 0);
+              const dateB = new Date(b.created_at || 0);
+              return dateB - dateA; // 최신순
+            });
+
+            reviews.value = allReviews;
+          } catch (err) {
+            console.error("건물 리뷰를 불러오는데 실패했습니다:", err);
+            // 건물 리뷰를 가져오지 못해도 매물 리뷰는 표시
+            reviews.value = listingReviews;
+          }
+        } else {
+          // 건물 정보가 없으면 매물 리뷰만 표시
+          reviews.value = listingReviews;
+        }
       } catch (err) {
         console.error("리뷰를 불러오는데 실패했습니다:", err);
       }
