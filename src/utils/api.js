@@ -1,6 +1,12 @@
 import axios from "axios";
 import { API_BASE_URL, API_ENDPOINTS } from "@/config/api";
 
+console.log("[API Client] 초기화 - API_BASE_URL:", API_BASE_URL);
+console.log(
+  "[API Client] VITE_API_BASE_URL:",
+  import.meta.env.VITE_API_BASE_URL
+);
+
 // axios 인스턴스 생성
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -16,9 +22,16 @@ apiClient.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    console.log(
+      "[API Request]",
+      config.method?.toUpperCase(),
+      config.baseURL + config.url,
+      config.params || ""
+    );
     return config;
   },
   (error) => {
+    console.error("[API Request Error]", error);
     return Promise.reject(error);
   }
 );
@@ -26,9 +39,23 @@ apiClient.interceptors.request.use(
 // 응답 인터셉터 - 에러 처리
 apiClient.interceptors.response.use(
   (response) => {
+    console.log(
+      "[API Response]",
+      response.config.method?.toUpperCase(),
+      response.config.url,
+      response.status,
+      response.data
+    );
     return response;
   },
   (error) => {
+    console.error(
+      "[API Response Error]",
+      error.config?.method?.toUpperCase(),
+      error.config?.url,
+      error.response?.status,
+      error.response?.data || error.message
+    );
     if (error.response?.status === 401) {
       // 인증 실패 시 로그아웃 처리
       localStorage.removeItem("token");
@@ -52,11 +79,13 @@ export const authAPI = {
 
 // Listing API
 export const listingAPI = {
-  getListings: (params) => apiClient.get(API_ENDPOINTS.LISTINGS.BASE, { params }),
+  getListings: (params) =>
+    apiClient.get(API_ENDPOINTS.LISTINGS.BASE, { params }),
 
   getListingById: (id) => apiClient.get(API_ENDPOINTS.LISTINGS.BY_ID(id)),
 
-  createListing: (listingData) => apiClient.post(API_ENDPOINTS.LISTINGS.BASE, listingData),
+  createListing: (listingData) =>
+    apiClient.post(API_ENDPOINTS.LISTINGS.BASE, listingData),
 
   updateListing: (id, listingData) =>
     apiClient.put(API_ENDPOINTS.LISTINGS.BY_ID(id), listingData),
@@ -70,14 +99,16 @@ export const listingAPI = {
 
 // Building API
 export const buildingAPI = {
-  getBuildings: (params) => apiClient.get(API_ENDPOINTS.BUILDINGS.BASE, { params }),
+  getBuildings: (params) =>
+    apiClient.get(API_ENDPOINTS.BUILDINGS.BASE, { params }),
 
   getBuildingById: (id) => apiClient.get(API_ENDPOINTS.BUILDINGS.BY_ID(id)),
 
   searchBuildings: (query) =>
     apiClient.get(API_ENDPOINTS.BUILDINGS.SEARCH, { params: { q: query } }),
 
-  createBuilding: (buildingData) => apiClient.post(API_ENDPOINTS.BUILDINGS.BASE, buildingData),
+  createBuilding: (buildingData) =>
+    apiClient.post(API_ENDPOINTS.BUILDINGS.BASE, buildingData),
 
   getBuildingListings: (buildingId) =>
     apiClient.get(API_ENDPOINTS.BUILDINGS.LISTINGS(buildingId)),
@@ -100,7 +131,8 @@ export const reviewAPI = {
   updateReview: (reviewId, reviewData) =>
     apiClient.put(API_ENDPOINTS.REVIEWS.BY_ID(reviewId), reviewData),
 
-  deleteReview: (reviewId) => apiClient.delete(API_ENDPOINTS.REVIEWS.BY_ID(reviewId)),
+  deleteReview: (reviewId) =>
+    apiClient.delete(API_ENDPOINTS.REVIEWS.BY_ID(reviewId)),
 };
 
 // Kakao Map API
