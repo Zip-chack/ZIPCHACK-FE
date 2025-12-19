@@ -26,10 +26,14 @@ export const useListingStore = defineStore("listing", () => {
             ? listing.is_favorite
             : false;
 
-        if (import.meta.env.DEV && isFavoriteValue) {
-          console.log("찜한 매물 발견:", listing.id, listing.title, {
-            isFavorite: listing.isFavorite,
-            is_favorite: listing.is_favorite,
+        if (import.meta.env.DEV) {
+          console.log("[ListingStore] 매물 데이터:", {
+            id: listing.id,
+            title: listing.title,
+            image: listing.image,
+            imageUrl: listing.imageUrl,
+            image_url: listing.image_url,
+            isFavorite: isFavoriteValue,
           });
         }
 
