@@ -18,7 +18,7 @@
         </button>
       </div>
       <div class="messages-area" ref="messagesArea">
-        <div v-for="(msg, index) in chatStore.messages" :key="index" 
+        <div v-for="(msg, index) in chatStore.messages" :key="msg.id || `temp-${index}`" 
             :class="getMessageClass(msg)">
           <p class="msg-content">{{ msg.content }}</p>
           <span class="timestamp" v-if="msg.senderId !== 0">{{ new Date(msg.createdAt).toLocaleTimeString() }}</span>
@@ -29,11 +29,11 @@
           v-model="newMessage" 
           @keyup.enter="sendMessage" 
           placeholder="메시지를 입력하세요..."
-          :disabled="chatStore.currentRoomStatus === 'COMPLETED'"
+          :disabled="!authStore.user?.id || chatStore.currentRoomStatus === 'COMPLETED'"
         />
         <button 
           @click="sendMessage"
-          :disabled="chatStore.currentRoomStatus === 'COMPLETED'"
+          :disabled="!authStore.user?.id || chatStore.currentRoomStatus === 'COMPLETED'"
         >
           전송
         </button>
@@ -54,8 +54,7 @@ const authStore = useAuthStore();
 const newMessage = ref('');
 const messagesArea = ref(null);
 
-// This is a placeholder. You should get the listing owner's ID and compare it.
-const isOwner = ref(true); 
+const isOwner = computed(() => chatStore.amIOwner); 
 const myId = computed(() => authStore.user?.id);
 
 const statusClass = computed(() => {
@@ -65,8 +64,8 @@ const statusClass = computed(() => {
 
 function getMessageClass(msg) {
     if (msg.senderId === 0) return 'message system-message';
-    // Ensure consistent type comparison (Number) to prevent '1' === 1 issues.
-    return Number(msg.senderId) === Number(myId.value) ? 'message my-message' : 'message opponent-message';
+    // The 'isMine' flag is pre-calculated in the store's normalization function.
+    return msg.isMine ? 'message my-message' : 'message opponent-message';
 }
 
 function sendMessage() {

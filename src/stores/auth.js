@@ -12,17 +12,17 @@ export const useAuthStore = defineStore("auth", () => {
 
   // 초기화 시 토큰이 있으면 사용자 정보 가져오기
   async function init() {
-    const storedToken = localStorage.getItem("token")
-    if (storedToken) {
+    const storedToken = localStorage.getItem("token");
+    if (storedToken && !user.value) { // Avoid re-fetching if user is already loaded
       try {
-        const response = await authAPI.getCurrentUser()
-        user.value = response.data
+        const response = await authAPI.getCurrentUser();
+        user.value = response.data;
       } catch (err) {
-        // 토큰이 유효하지 않으면 제거
-        localStorage.removeItem("token")
-        user.value = null
+        localStorage.removeItem("token");
+        user.value = null;
       }
     }
+    return user.value;
   }
 
   async function login(email, password) {
