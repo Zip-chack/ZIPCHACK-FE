@@ -151,30 +151,6 @@
         </div>
       </div>
     </section>
-
-    <!-- Stats Section -->
-    <section class="py-16 bg-primary-600 text-white">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-          <div>
-            <div class="text-4xl font-bold mb-2">15,000+</div>
-            <div class="text-primary-200">등록 매물</div>
-          </div>
-          <div>
-            <div class="text-4xl font-bold mb-2">8,500+</div>
-            <div class="text-primary-200">실거주 리뷰</div>
-          </div>
-          <div>
-            <div class="text-4xl font-bold mb-2">3,200+</div>
-            <div class="text-primary-200">등록 건물</div>
-          </div>
-          <div>
-            <div class="text-4xl font-bold mb-2">50,000+</div>
-            <div class="text-primary-200">월간 사용자</div>
-          </div>
-        </div>
-      </div>
-    </section>
   </div>
 </template>
 
