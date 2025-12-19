@@ -51,6 +51,12 @@ export const API_ENDPOINTS = {
   PUBLIC_DATA: {
     APARTMENT_RENT: "/public-data/apartment-rent",
   },
+
+  // Image API 엔드포인트
+  IMAGES: {
+    UPLOAD: "/images/upload",
+    DELETE: "/images/delete",
+  },
 };
 
 // API 기본 URL 설정 (환경변수에서 가져오거나 기본값 사용)
