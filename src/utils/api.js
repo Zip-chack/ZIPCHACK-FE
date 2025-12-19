@@ -150,4 +150,23 @@ export const publicDataAPI = {
     }),
 };
 
+// Chat API
+export const chatAPI = {
+  createOrGetChatRoom: (listingId) =>
+    apiClient.post("/chat/rooms", { listingId }),
+
+  getMyChatRooms: () => apiClient.get("/chat/my-rooms"),
+
+  getChatRoomById: (roomId) => apiClient.get(`/chat/rooms/${roomId}`),
+
+  getChatMessages: (roomId) =>
+    apiClient.get(`/chat/rooms/${roomId}/messages`),
+
+  completeChatRoom: (roomId) =>
+    apiClient.patch(`/chat/rooms/${roomId}/complete`),
+
+  deleteChatRoom: (roomId) =>
+    apiClient.delete(`/chat/rooms/${roomId}`),
+};
+
 export default apiClient;
