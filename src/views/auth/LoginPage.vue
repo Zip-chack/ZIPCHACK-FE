@@ -1,5 +1,7 @@
 <template>
-  <div class="min-h-[calc(100vh-200px)] flex items-center justify-center py-12 px-4">
+  <div
+    class="min-h-[calc(100vh-200px)] flex items-center justify-center py-12 px-4"
+  >
     <div class="max-w-md w-full">
       <div class="text-center mb-8">
         <h1 class="text-3xl font-bold text-gray-900">로그인</h1>
@@ -8,7 +10,9 @@
 
       <form @submit.prevent="handleLogin" class="card p-8 space-y-6">
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">이메일</label>
+          <label class="block text-sm font-medium text-gray-700 mb-2"
+            >이메일</label
+          >
           <input
             v-model="email"
             type="email"
@@ -19,7 +23,9 @@
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">비밀번호</label>
+          <label class="block text-sm font-medium text-gray-700 mb-2"
+            >비밀번호</label
+          >
           <input
             v-model="password"
             type="password"
@@ -29,13 +35,14 @@
           />
         </div>
 
-        <button type="submit" class="btn-primary w-full">
-          로그인
-        </button>
+        <button type="submit" class="btn-primary w-full">로그인</button>
 
         <p class="text-center text-sm text-gray-600">
           계정이 없으신가요?
-          <router-link to="/register" class="text-primary-500 hover:text-primary-600 font-medium">
+          <router-link
+            to="/register"
+            class="text-primary-500 hover:text-primary-600 font-medium"
+          >
             회원가입
           </router-link>
         </p>
@@ -45,27 +52,30 @@
 </template>
 
 <script>
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
+import { ref } from "vue";
+import { useRouter } from "vue-router";
+import { useAuthStore } from "@/stores/auth";
 
 export default {
-  name: 'LoginPage',
+  name: "LoginPage",
   setup() {
-    const router = useRouter()
-    const authStore = useAuthStore()
+    const router = useRouter();
+    const authStore = useAuthStore();
 
-    const email = ref('')
-    const password = ref('')
-    const error = ref(null)
+    const email = ref("");
+    const password = ref("");
+    const error = ref(null);
 
     async function handleLogin() {
       error.value = null;
-      const result = await authStore.login(email.value, password.value)
+      const result = await authStore.login(email.value, password.value);
       if (result.success) {
-        router.push('/')
+        // 페이지 리로드로 완전히 초기화 (서버 부담 없음, 단순 클라이언트 새로고침)
+        // 이전 사용자의 WebSocket 연결과 모든 상태를 완전히 초기화
+        window.location.href = "/";
+        return;
       } else {
-        alert(result.error || '로그인에 실패했습니다.');
+        alert(result.error || "로그인에 실패했습니다.");
         error.value = result.error;
       }
     }
@@ -74,8 +84,8 @@ export default {
       email,
       password,
       error,
-      handleLogin
-    }
-  }
-}
+      handleLogin,
+    };
+  },
+};
 </script>
