@@ -195,6 +195,16 @@
         </div>
       </div>
 
+      <!-- Image Upload -->
+      <div class="card p-6">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">매물 이미지</h2>
+        <ImageUpload
+          v-model="form.image"
+          folder="listings"
+          label="매물 이미지를 업로드하세요"
+        />
+      </div>
+
       <!-- Description -->
       <div class="card p-6">
         <h2 class="text-lg font-semibold text-gray-900 mb-4">상세 설명</h2>
@@ -230,11 +240,13 @@ import { useListingStore } from "@/stores/listing";
 import { useAuthStore } from "@/stores/auth";
 import { buildingAPI } from "@/utils/api";
 import BuildingSearchModal from "@/components/map/BuildingSearchModal.vue";
+import ImageUpload from "@/components/common/ImageUpload.vue";
 
 export default {
   name: "ListingCreatePage",
   components: {
     BuildingSearchModal,
+    ImageUpload,
   },
   setup() {
     const router = useRouter();
@@ -253,6 +265,7 @@ export default {
       deposit: null,
       monthlyRent: null,
       maintenanceFee: null,
+      image: "",
       description: "",
     });
 
@@ -434,7 +447,7 @@ export default {
             : 0,
           areaM2: Number(form.value.area),
           floor: Number(form.value.floor),
-          image: "",
+          image: form.value.image || "",
           building: {
             id: Number(form.value.selectedBuilding.id),
           },

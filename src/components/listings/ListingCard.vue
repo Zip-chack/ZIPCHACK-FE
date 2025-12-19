@@ -202,12 +202,21 @@ export default {
 
     // 계산된 속성들
     const imageUrl = computed(() => {
-      return (
+      const url =
         listingData.value.image ||
         listingData.value.imageUrl ||
         listingData.value.image_url ||
-        ""
-      );
+        "";
+
+      if (import.meta.env.DEV && url) {
+        console.log("[ListingCard] 이미지 URL:", url, {
+          image: listingData.value.image,
+          imageUrl: listingData.value.imageUrl,
+          image_url: listingData.value.image_url,
+        });
+      }
+
+      return url;
     });
 
     const title = computed(() => {
@@ -314,6 +323,24 @@ export default {
 
     const handleImageError = (event) => {
       // 이미지 로드 실패 시 빈 이미지로 처리
+      console.error("[ListingCard] 이미지 로드 실패:", {
+        imageUrl: imageUrl.value,
+        src: event.target.src,
+        error: event,
+        errorType: event.type,
+        target: event.target,
+      });
+
+      // 네트워크 에러인지 확인
+      if (event.target.complete === false) {
+        console.error(
+          "[ListingCard] 이미지 로드 실패 - 네트워크 또는 CORS 문제일 수 있습니다."
+        );
+        console.error(
+          "[ListingCard] S3 버킷의 CORS 설정과 퍼블릭 액세스 권한을 확인하세요."
+        );
+      }
+
       event.target.style.display = "none";
     };
 

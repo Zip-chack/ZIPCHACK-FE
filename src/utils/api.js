@@ -22,11 +22,30 @@ apiClient.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
+    // FormData인 경우 Content-Type 헤더를 제거 (브라우저가 자동으로 boundary 설정)
+    if (config.data instanceof FormData) {
+      delete config.headers["Content-Type"];
+      console.log("[API Request] FormData 감지 - Content-Type 헤더 제거됨");
+      // FormData 내용 확인 (디버깅용)
+      for (let pair of config.data.entries()) {
+        console.log(
+          `[API Request] FormData 항목: ${pair[0]} =`,
+          pair[1] instanceof File
+            ? `File(${pair[1].name}, ${pair[1].size} bytes)`
+            : pair[1]
+        );
+      }
+    }
+
     console.log(
       "[API Request]",
       config.method?.toUpperCase(),
       config.baseURL + config.url,
-      config.params || ""
+      config.params || "",
+      config.data instanceof FormData ? "(FormData)" : "",
+      "Headers:",
+      config.headers
     );
     return config;
   },
@@ -188,14 +207,27 @@ export const chatAPI = {
 
   getChatRoomById: (roomId) => apiClient.get(`/chat/rooms/${roomId}`),
 
-  getChatMessages: (roomId) =>
-    apiClient.get(`/chat/rooms/${roomId}/messages`),
+  getChatMessages: (roomId) => apiClient.get(`/chat/rooms/${roomId}/messages`),
 
   completeChatRoom: (roomId) =>
     apiClient.patch(`/chat/rooms/${roomId}/complete`),
 
-  deleteChatRoom: (roomId) =>
-    apiClient.delete(`/chat/rooms/${roomId}`),
+  deleteChatRoom: (roomId) => apiClient.delete(`/chat/rooms/${roomId}`),
+};
+
+// Image API
+export const imageAPI = {
+  uploadImage: (file, folder = "uploads") => {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("folder", folder);
+    return apiClient.post(API_ENDPOINTS.IMAGES.UPLOAD, formData);
+  },
+
+  deleteImage: (imageUrl) =>
+    apiClient.delete(API_ENDPOINTS.IMAGES.DELETE, {
+      params: { url: imageUrl },
+    }),
 };
 
 export default apiClient;
