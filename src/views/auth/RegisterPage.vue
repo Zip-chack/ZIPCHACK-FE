@@ -81,14 +81,23 @@ export default {
     const email = ref('')
     const password = ref('')
     const passwordConfirm = ref('')
+    const error = ref(null)
 
-    function handleRegister() {
+    async function handleRegister() {
       if (password.value !== passwordConfirm.value) {
         alert('비밀번호가 일치하지 않습니다')
         return
       }
-      authStore.register(email.value, password.value, nickname.value)
-      router.push('/')
+
+      error.value = null;
+      const result = await authStore.register(email.value, password.value, nickname.value)
+
+      if (result.success) {
+        router.push('/')
+      } else {
+        alert(result.error || '회원가입에 실패했습니다.');
+        error.value = result.error;
+      }
     }
 
     return {
@@ -96,6 +105,7 @@ export default {
       email,
       password,
       passwordConfirm,
+      error,
       handleRegister
     }
   }

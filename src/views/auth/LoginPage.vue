@@ -57,15 +57,23 @@ export default {
 
     const email = ref('')
     const password = ref('')
+    const error = ref(null)
 
-    function handleLogin() {
-      authStore.login(email.value, password.value)
-      router.push('/')
+    async function handleLogin() {
+      error.value = null;
+      const result = await authStore.login(email.value, password.value)
+      if (result.success) {
+        router.push('/')
+      } else {
+        alert(result.error || '로그인에 실패했습니다.');
+        error.value = result.error;
+      }
     }
 
     return {
       email,
       password,
+      error,
       handleLogin
     }
   }

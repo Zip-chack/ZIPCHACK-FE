@@ -43,7 +43,7 @@
 </template>
 
 <script setup>
-import { ref, onUnmounted, computed, watch, nextTick } from 'vue';
+import { ref, onUnmounted, computed, watch, nextTick, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { useChatStore } from '@/stores/chat';
 import { useAuthStore } from '@/stores/auth';
@@ -94,12 +94,14 @@ watch(() => chatStore.messages, () => {
     scrollToBottom();
 }, { deep: true, flush: 'post' });
 
-// The component assumes the connection is handled by the page linking to it.
-// It ensures that if a user navigates directly, a connection is attempted.
 const route = useRoute();
-if (chatStore.currentRoomId !== route.params.roomId) {
-    chatStore.joinRoomById(route.params.roomId);
-}
+
+onMounted(() => {
+  const roomId = route.params.roomId;
+  if (roomId) {
+    chatStore.joinRoomById(roomId);
+  }
+});
 
 onUnmounted(() => {
   chatStore.disconnect();
