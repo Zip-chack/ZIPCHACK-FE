@@ -1,6 +1,8 @@
 <template>
   <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <h1 class="text-2xl font-bold text-gray-900 mb-8">매물 등록</h1>
+    <h1 class="text-2xl font-bold text-gray-900 mb-8">
+      {{ isEditMode ? "매물 수정" : "매물 등록" }}
+    </h1>
 
     <form @submit.prevent="handleSubmit" class="space-y-6">
       <!-- Building Selection -->
@@ -218,8 +220,15 @@
 
       <!-- Submit -->
       <div class="flex justify-end space-x-4">
-        <router-link to="/listings" class="btn-secondary">취소</router-link>
-        <button type="submit" class="btn-primary">등록하기</button>
+        <router-link
+          :to="isEditMode ? `/listings/${route.params.id}` : '/listings'"
+          class="btn-secondary"
+        >
+          취소
+        </router-link>
+        <button type="submit" class="btn-primary">
+          {{ isEditMode ? "수정하기" : "등록하기" }}
+        </button>
       </div>
     </form>
 
@@ -254,6 +263,10 @@ export default {
     const buildingStore = useBuildingStore();
     const listingStore = useListingStore();
     const authStore = useAuthStore();
+
+    const isEditMode = computed(() => {
+      return route.name === "ListingEdit" && route.params.id;
+    });
 
     const form = ref({
       buildingSearch: "",
@@ -369,42 +382,97 @@ export default {
     onMounted(async () => {
       await buildingStore.fetchBuildings();
 
-      // buildingId 쿼리 파라미터가 있으면 해당 건물을 자동으로 선택
-      const buildingId = route.query.buildingId;
-      if (buildingId) {
+      // 수정 모드인 경우 기존 매물 데이터 불러오기
+      if (isEditMode.value) {
         try {
-          // buildingId를 Number로 변환
-          const buildingIdNum = Number(buildingId);
-          if (isNaN(buildingIdNum)) {
-            console.error("유효하지 않은 buildingId:", buildingId);
-            return;
+          const listingId = Number(route.params.id);
+          await listingStore.fetchListingById(listingId);
+          const listing = listingStore.getListingById(listingId);
+
+          if (listing) {
+            // 소유자 확인
+            if (
+              !authStore.user ||
+              !listing.owner ||
+              authStore.user.id !== listing.owner.id
+            ) {
+              alert("본인이 등록한 매물만 수정할 수 있습니다.");
+              router.push(`/listings/${listingId}`);
+              return;
+            }
+
+            // 폼에 기존 데이터 채우기
+            form.value.title = listing.title || "";
+            form.value.roomType = listing.roomType || "";
+            form.value.floor = listing.floor || null;
+            form.value.area = listing.areaM2 || listing.area || null;
+            form.value.deposit = listing.deposit || null;
+            form.value.monthlyRent = listing.monthlyRent || null;
+            form.value.maintenanceFee = listing.maintenanceFee || null;
+            form.value.image =
+              listing.image || listing.imageUrl || listing.image_url || "";
+            form.value.description = listing.description || "";
+
+            // 건물 정보 설정
+            if (listing.building) {
+              const building = listing.building;
+              form.value.selectedBuilding = {
+                id: building.id,
+                name: building.name || "",
+                road_address:
+                  building.roadAddress || building.road_address || "",
+              };
+              form.value.buildingSearch = `${building.name || ""} ${
+                building.roadAddress || building.road_address || ""
+              }`.trim();
+            }
           }
-
-          const response = await buildingAPI.getBuildingById(buildingIdNum);
-          const building = response.data;
-
-          if (!building || !building.id) {
-            console.error("건물 정보가 올바르지 않습니다:", building);
-            return;
-          }
-
-          const selectedBuilding = {
-            id: building.id,
-            name: building.name,
-            road_address: building.roadAddress || building.roadAddress || "",
-          };
-
-          form.value.selectedBuilding = selectedBuilding;
-          // 건물 검색 필드에도 표시
-          form.value.buildingSearch = `${building.name} ${
-            building.roadAddress || ""
-          }`.trim();
         } catch (error) {
-          console.error("건물 정보를 불러오는데 실패했습니다:", error);
+          console.error("매물 정보를 불러오는데 실패했습니다:", error);
           alert(
-            "건물 정보를 불러오는데 실패했습니다: " +
+            "매물 정보를 불러오는데 실패했습니다: " +
               (error.response?.data?.message || error.message)
           );
+          router.push("/listings");
+        }
+      } else {
+        // 생성 모드: buildingId 쿼리 파라미터가 있으면 해당 건물을 자동으로 선택
+        const buildingId = route.query.buildingId;
+        if (buildingId) {
+          try {
+            // buildingId를 Number로 변환
+            const buildingIdNum = Number(buildingId);
+            if (isNaN(buildingIdNum)) {
+              console.error("유효하지 않은 buildingId:", buildingId);
+              return;
+            }
+
+            const response = await buildingAPI.getBuildingById(buildingIdNum);
+            const building = response.data;
+
+            if (!building || !building.id) {
+              console.error("건물 정보가 올바르지 않습니다:", building);
+              return;
+            }
+
+            const selectedBuilding = {
+              id: building.id,
+              name: building.name,
+              road_address: building.roadAddress || building.roadAddress || "",
+            };
+
+            form.value.selectedBuilding = selectedBuilding;
+            // 건물 검색 필드에도 표시
+            form.value.buildingSearch = `${building.name} ${
+              building.roadAddress || ""
+            }`.trim();
+          } catch (error) {
+            console.error("건물 정보를 불러오는데 실패했습니다:", error);
+            alert(
+              "건물 정보를 불러오는데 실패했습니다: " +
+                (error.response?.data?.message || error.message)
+            );
+          }
         }
       }
     });
@@ -448,6 +516,7 @@ export default {
           areaM2: Number(form.value.area),
           floor: Number(form.value.floor),
           image: form.value.image || "",
+          description: form.value.description || "",
           building: {
             id: Number(form.value.selectedBuilding.id),
           },
@@ -458,18 +527,32 @@ export default {
         console.log("건물 ID:", form.value.selectedBuilding?.id);
         console.log("건물 ID 타입:", typeof form.value.selectedBuilding?.id);
 
-        const result = await listingStore.createListing(listingData);
-        if (result.success) {
-          alert("매물이 등록되었습니다!");
-          // buildingId가 있었으면 해당 빌딩 상세 페이지로 이동
-          const buildingId = route.query.buildingId;
-          if (buildingId) {
-            router.push(`/buildings/${buildingId}`);
+        let result;
+        if (isEditMode.value) {
+          // 수정 모드
+          const listingId = Number(route.params.id);
+          result = await listingStore.updateListing(listingId, listingData);
+          if (result.success) {
+            alert("매물이 수정되었습니다!");
+            router.push(`/listings/${listingId}`);
           } else {
-            router.push("/listings");
+            alert(result.error || "매물 수정에 실패했습니다.");
           }
         } else {
-          alert(result.error || "매물 등록에 실패했습니다.");
+          // 생성 모드
+          result = await listingStore.createListing(listingData);
+          if (result.success) {
+            alert("매물이 등록되었습니다!");
+            // buildingId가 있었으면 해당 빌딩 상세 페이지로 이동
+            const buildingId = route.query.buildingId;
+            if (buildingId) {
+              router.push(`/buildings/${buildingId}`);
+            } else {
+              router.push("/listings");
+            }
+          } else {
+            alert(result.error || "매물 등록에 실패했습니다.");
+          }
         }
       } catch (err) {
         console.error("매물 등록 에러:", err);
@@ -488,6 +571,8 @@ export default {
       showMapSearchModal,
       handleSubmit,
       handleBuildingSelectFromMap,
+      isEditMode,
+      route,
     };
   },
 };
