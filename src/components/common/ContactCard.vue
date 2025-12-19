@@ -4,7 +4,7 @@
     <button class="btn-primary w-full mb-3" @click="handlePhoneCall">
       전화 문의
     </button>
-    <button class="btn-secondary w-full" @click="handleMessage">
+    <button v-if="!isOwner" class="btn-secondary w-full" @click="handleMessage">
       메시지 보내기
     </button>
   </div>
@@ -13,14 +13,23 @@
 <script>
 export default {
   name: "ContactCard",
+  props: {
+    listingId: {
+      type: [Number, String],
+      required: true,
+    },
+    isOwner: {
+      type: Boolean,
+      default: false,
+    },
+  },
+  emits: ["start-chat"], // Declare the emitted event
   methods: {
     handlePhoneCall() {
-      // TODO: 전화 문의 기능 구현
-      console.log("전화 문의");
+      alert("전화 문의: 050-1234-5678");
     },
     handleMessage() {
-      // TODO: 메시지 보내기 기능 구현
-      console.log("메시지 보내기");
+      this.$emit("start-chat", this.listingId); // Emit custom event with listingId
     },
   },
 };

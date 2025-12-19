@@ -1,7 +1,12 @@
 <template>
   <div class="space-y-6">
     <!-- Image Gallery -->
-    <div class="card overflow-hidden">
+    <div class="card overflow-hidden relative">
+      <!-- Deal Complete Overlay -->
+      <div v-if="listing && (listing.status === 'COMPLETED' || listing.status === '거래완료')" class="absolute inset-0 bg-black bg-opacity-60 flex items-center justify-center z-10">
+        <span class="text-white text-3xl font-bold">거래 완료</span>
+      </div>
+      
       <div
         class="w-full h-80 bg-gray-200 flex items-center justify-center overflow-hidden"
       >
@@ -50,6 +55,7 @@
           </div>
           <h1 class="text-2xl font-bold text-gray-900">{{ title }}</h1>
           <p v-if="address" class="text-gray-600 mt-1">{{ address }}</p>
+          <p v-if="ownerId" class="text-gray-600 mt-1">등록자 ID: {{ ownerId }}</p>
         </div>
         <div class="flex items-center gap-2 ml-4">
           <button
@@ -365,6 +371,10 @@ export default {
       event.target.style.display = "none";
     };
 
+    const ownerId = computed(() => {
+        return listingData.value.owner?.id || null;
+    });
+
     return {
       imageUrl,
       title,
@@ -383,6 +393,7 @@ export default {
       isFavorite,
       handleToggleFavorite,
       handleImageError,
+      ownerId,
     };
   },
 };

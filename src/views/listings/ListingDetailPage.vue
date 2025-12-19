@@ -50,7 +50,11 @@
       <!-- Sidebar -->
       <div class="space-y-6">
         <!-- Contact Card -->
-        <ContactCard />
+        <ContactCard
+          :listingId="listing.id"
+          :isOwner="isOwner"
+          @start-chat="startChat"
+        />
 
         <!-- Commerce Radar Chart -->
         <CommerceRadarChart
@@ -104,10 +108,12 @@
   />
 </template>
 
-<script>
+<script setup>
 import { ref, computed, onMounted } from "vue";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router"; // Added useRouter
 import { useListingStore } from "@/stores/listing";
+import { useChatStore } from "@/stores/chat"; // Added useChatStore
+import { useAuthStore } from "@/stores/auth";
 import { reviewAPI } from "@/utils/api";
 import ReviewCard from "@/components/common/ReviewCard.vue";
 import ListingBasicInfo from "@/components/listings/ListingBasicInfo.vue";
@@ -117,103 +123,87 @@ import CommerceRadarChart from "@/components/common/CommerceRadarChart.vue";
 import CommerceAnalysis from "@/components/common/CommerceAnalysis.vue";
 import RoadviewModal from "@/components/common/RoadviewModal.vue";
 
-export default {
-  name: "ListingDetailPage",
-  components: {
-    ReviewCard,
-    ListingBasicInfo,
-    NearbyCommerceInfo,
-    ContactCard,
-    CommerceRadarChart,
-    CommerceAnalysis,
-    RoadviewModal,
-  },
-  setup() {
-    const route = useRoute();
-    const listingStore = useListingStore();
+const route = useRoute();
+const router = useRouter(); // Initialize useRouter
+const listingStore = useListingStore();
+const chatStore = useChatStore(); // Initialize useChatStore
+const authStore = useAuthStore();
 
-    const listing = computed(() =>
-      listingStore.getListingById(route.params.id)
+const listingId = computed(() => route.params.id);
+const listing = computed(() => listingStore.getListingById(listingId.value));
+const reviews = ref([]);
+const showRoadview = ref(false);
+
+const isOwner = computed(() => {
+  if (!authStore.user || !listing.value?.owner) {
+    return false;
+  }
+  return authStore.user.id === listing.value.owner.id;
+});
+
+// Chat initiation function
+const startChat = async (id) => { // Takes id from emitted event
+  const roomId = await chatStore.enterRoom(id); // Use the passed id
+  if (roomId) {
+    router.push({ name: 'ChatRoom', params: { roomId } });
+  } else {
+    // Error message already handled by chatStore.enterRoom
+  }
+};
+
+const toggleFavorite = (id) => {
+  listingStore.toggleFavorite(id);
+};
+
+onMounted(async () => {
+  await listingStore.fetchListingById(listingId.value);
+
+  try {
+    const listingReviewsResponse = await reviewAPI.getListingReviews(
+      listingId.value
     );
-    const reviews = ref([]);
-    const showRoadview = ref(false);
+    const listingReviews = listingReviewsResponse.data.map((review) => ({
+      ...review,
+      rating_overall: review.ratingOverall,
+      rating_noise: review.ratingNoise,
+      rating_landlord: review.ratingLandlord,
+      rating_facility: review.ratingFacility,
+      created_at: review.createdAt,
+      type: "listing", // 매물 리뷰임을 표시
+    }));
 
-    onMounted(async () => {
-      await listingStore.fetchListingById(route.params.id);
+    let allReviews = [...listingReviews];
 
-      // 매물 리뷰 조회
+    if (listing.value?.building?.id) {
       try {
-        const listingReviewsResponse = await reviewAPI.getListingReviews(
-          route.params.id
+        const buildingReviewsResponse = await reviewAPI.getBuildingReviews(
+          listing.value.building.id
         );
-        const listingReviews = listingReviewsResponse.data.map((review) => ({
-          id: review.id,
-          user: review.user,
+        const buildingReviews = buildingReviewsResponse.data.map((review) => ({
+          ...review,
           rating_overall: review.ratingOverall,
           rating_noise: review.ratingNoise,
           rating_landlord: review.ratingLandlord,
           rating_facility: review.ratingFacility,
-          title: review.title,
-          content: review.content,
           created_at: review.createdAt,
-          type: "listing", // 매물 리뷰임을 표시
+          type: "building", // 건물 리뷰임을 표시
+          building: listing.value.building, // 건물 정보 추가
         }));
-
-        // 해당 매물이 속한 건물의 리뷰도 가져오기
-        if (listing.value?.building?.id) {
-          try {
-            const buildingReviewsResponse = await reviewAPI.getBuildingReviews(
-              listing.value.building.id
-            );
-            const buildingReviews = buildingReviewsResponse.data.map(
-              (review) => ({
-                id: review.id,
-                user: review.user,
-                rating_overall: review.ratingOverall,
-                rating_noise: review.ratingNoise,
-                rating_landlord: review.ratingLandlord,
-                rating_facility: review.ratingFacility,
-                title: review.title,
-                content: review.content,
-                created_at: review.createdAt,
-                type: "building", // 건물 리뷰임을 표시
-                building: listing.value.building, // 건물 정보 추가
-              })
-            );
-
-            // 매물 리뷰와 건물 리뷰 합치기 (최신순 정렬)
-            const allReviews = [...listingReviews, ...buildingReviews];
-            allReviews.sort((a, b) => {
-              const dateA = new Date(a.created_at || 0);
-              const dateB = new Date(b.created_at || 0);
-              return dateB - dateA; // 최신순
-            });
-
-            reviews.value = allReviews;
-          } catch (err) {
-            console.error("건물 리뷰를 불러오는데 실패했습니다:", err);
-            // 건물 리뷰를 가져오지 못해도 매물 리뷰는 표시
-            reviews.value = listingReviews;
-          }
-        } else {
-          // 건물 정보가 없으면 매물 리뷰만 표시
-          reviews.value = listingReviews;
-        }
+        allReviews = [...allReviews, ...buildingReviews];
       } catch (err) {
-        console.error("리뷰를 불러오는데 실패했습니다:", err);
+        console.error("건물 리뷰를 불러오는데 실패했습니다:", err);
       }
-    });
-
-    function toggleFavorite(id) {
-      listingStore.toggleFavorite(id);
     }
 
-    return {
-      listing,
-      reviews,
-      showRoadview,
-      toggleFavorite,
-    };
-  },
-};
+    allReviews.sort((a, b) => {
+      const dateA = new Date(a.created_at || 0);
+      const dateB = new Date(b.created_at || 0);
+      return dateB - dateA; // 최신순
+    });
+
+    reviews.value = allReviews;
+  } catch (err) {
+    console.error("리뷰를 불러오는데 실패했습니다:", err);
+  }
+});
 </script>

@@ -37,6 +37,12 @@ const routes = [
     component: () => import("@/views/reviews/BuildingReviewCreatePage.vue"),
   },
   {
+    path: "/chat/:roomId",
+    name: "ChatRoom",
+    component: () => import("@/views/chat/ChatRoomPage.vue"),
+    props: true,
+  },
+  {
     path: "/map",
     name: "Map",
     component: () => import("@/views/map/MapPage.vue"),
@@ -55,6 +61,11 @@ const routes = [
     path: "/register",
     name: "Register",
     component: () => import("@/views/auth/RegisterPage.vue"),
+  },
+  {
+    path: "/my-chats",
+    name: "MyChats",
+    component: () => import("@/views/chat/MyChatsPage.vue"),
   },
 ];
 

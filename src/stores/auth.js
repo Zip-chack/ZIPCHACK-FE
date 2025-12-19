@@ -8,11 +8,12 @@ export const useAuthStore = defineStore("auth", () => {
   const error = ref(null)
 
   const isLoggedIn = computed(() => !!user.value)
+  const token = computed(() => localStorage.getItem("token"))
 
   // 초기화 시 토큰이 있으면 사용자 정보 가져오기
   async function init() {
-    const token = localStorage.getItem("token")
-    if (token) {
+    const storedToken = localStorage.getItem("token")
+    if (storedToken) {
       try {
         const response = await authAPI.getCurrentUser()
         user.value = response.data
@@ -80,6 +81,7 @@ export const useAuthStore = defineStore("auth", () => {
     isLoading,
     error,
     isLoggedIn,
+    token,
     init,
     login,
     logout,

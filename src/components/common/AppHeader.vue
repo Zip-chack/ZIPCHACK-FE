@@ -32,6 +32,13 @@
           >
             찜 목록
           </router-link>
+          <router-link
+            v-if="authStore.isLoggedIn"
+            to="/my-chats"
+            class="text-gray-600 hover:text-primary-500 font-medium transition-colors"
+          >
+            내 채팅
+          </router-link>
         </nav>
 
         <!-- Auth Buttons -->
@@ -100,13 +107,31 @@
             class="text-gray-600 hover:text-primary-500 font-medium"
             >찜 목록</router-link
           >
-          <div class="flex space-x-4 pt-4 border-t border-gray-100">
-            <router-link to="/login" class="btn-secondary flex-1 text-center"
-              >로그인</router-link
-            >
-            <router-link to="/register" class="btn-primary flex-1 text-center"
-              >회원가입</router-link
-            >
+          <router-link
+            v-if="authStore.isLoggedIn"
+            to="/my-chats"
+            class="text-gray-600 hover:text-primary-500 font-medium"
+            >내 채팅</router-link
+          >
+          <div class="pt-4 border-t border-gray-100">
+            <template v-if="authStore.isLoggedIn">
+              <div class="flex flex-col space-y-2">
+                <span class="text-gray-800 font-medium px-2">{{ authStore.user?.nickname }}님, 환영합니다.</span>
+                <button @click="authStore.logout" class="btn-secondary w-full text-center">
+                  로그아웃
+                </button>
+              </div>
+            </template>
+            <template v-else>
+              <div class="flex space-x-4">
+                <router-link to="/login" class="btn-secondary flex-1 text-center"
+                  >로그인</router-link
+                >
+                <router-link to="/register" class="btn-primary flex-1 text-center"
+                  >회원가입</router-link
+                >
+              </div>
+            </template>
           </div>
         </nav>
       </div>
@@ -115,7 +140,7 @@
 </template>
 
 <script>
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import { useAuthStore } from "@/stores/auth";
 
 export default {
@@ -124,9 +149,13 @@ export default {
     const authStore = useAuthStore();
     const isMobileMenuOpen = ref(false);
 
+    // This computed property will help simplify the mobile menu template
+    const user = computed(() => authStore.user);
+
     return {
       authStore,
       isMobileMenuOpen,
+      user
     };
   },
 };

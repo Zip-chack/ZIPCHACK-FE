@@ -186,6 +186,7 @@ export default {
     });
 
     function goToListing(id) {
+      console.log("Navigating to listing with ID:", id); // Debug log
       router.push(`/listings/${id}`);
     }
 
