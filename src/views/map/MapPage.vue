@@ -94,7 +94,14 @@ export default {
     const buildings = computed(() => buildingStore.buildings);
 
     onMounted(async () => {
-      await buildingStore.fetchBuildings();
+      console.log("[MapPage] onMounted 실행됨");
+      console.log("[MapPage] fetchBuildings 호출 전");
+      try {
+        await buildingStore.fetchBuildings();
+        console.log("[MapPage] fetchBuildings 완료");
+      } catch (err) {
+        console.error("[MapPage] fetchBuildings 에러:", err);
+      }
       loadKakaoMapSDK();
     });
 
