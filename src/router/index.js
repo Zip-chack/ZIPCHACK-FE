@@ -17,6 +17,11 @@ const routes = [
     component: () => import("@/views/listings/ListingCreatePage.vue"),
   },
   {
+    path: "/listings/:id/edit",
+    name: "ListingEdit",
+    component: () => import("@/views/listings/ListingCreatePage.vue"),
+  },
+  {
     path: "/listings/:id",
     name: "ListingDetail",
     component: () => import("@/views/listings/ListingDetailPage.vue"),
@@ -72,6 +77,14 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(),
   routes,
+  scrollBehavior(to, from, savedPosition) {
+    // 브라우저 뒤로가기/앞으로가기 시 저장된 위치로 스크롤
+    if (savedPosition) {
+      return savedPosition;
+    }
+    // 그 외의 경우 항상 최상단으로 스크롤
+    return { top: 0, behavior: "smooth" };
+  },
 });
 
 export default router;
