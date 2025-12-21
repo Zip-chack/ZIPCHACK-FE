@@ -5,10 +5,10 @@
     <div class="max-w-md w-full">
       <div class="text-center mb-8">
         <h1 class="text-3xl font-bold text-gray-900">아이디 찾기</h1>
-        <p class="text-gray-600 mt-2">등록하신 이메일을 입력해주세요</p>
+        <p class="text-gray-600 mt-2">등록하신 이메일과 이름을 입력해주세요</p>
       </div>
 
-      <form @submit.prevent="handleFindEmail" class="card p-8 space-y-6">
+      <form @submit.prevent="handleFindUsername" class="card p-8 space-y-6">
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2"
             >이메일</label
@@ -17,6 +17,19 @@
             v-model="email"
             type="email"
             placeholder="이메일 주소"
+            class="input"
+            required
+          />
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2"
+            >실제 이름</label
+          >
+          <input
+            v-model="name"
+            type="text"
+            placeholder="회원가입 시 입력한 실제 이름"
             class="input"
             required
           />
@@ -35,10 +48,10 @@
             {{ result.message }}
           </p>
           <p
-            v-if="result.found && result.email"
-            class="text-green-900 font-semibold mt-2"
+            v-if="result.found && result.username"
+            class="text-green-900 font-semibold mt-2 text-lg"
           >
-            등록된 이메일: {{ result.email }}
+            아이디: {{ result.username }}
           </p>
         </div>
 
@@ -67,14 +80,15 @@ export default {
   name: "FindEmailPage",
   setup() {
     const email = ref("");
+    const name = ref("");
     const result = ref(null);
     const isLoading = ref(false);
 
-    async function handleFindEmail() {
+    async function handleFindUsername() {
       result.value = null;
       isLoading.value = true;
       try {
-        const response = await authAPI.findEmail(email.value);
+        const response = await authAPI.findUsername(email.value, name.value);
         result.value = response.data;
       } catch (error) {
         result.value = {
@@ -88,9 +102,10 @@ export default {
 
     return {
       email,
+      name,
       result,
       isLoading,
-      handleFindEmail,
+      handleFindUsername,
     };
   },
 };

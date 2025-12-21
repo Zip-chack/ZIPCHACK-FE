@@ -9,6 +9,15 @@
       </div>
 
       <form @submit.prevent="handleResetPassword" class="card p-8 space-y-6">
+        <div
+          v-if="email"
+          class="p-3 rounded-lg bg-gray-50 border border-gray-200"
+        >
+          <p class="text-sm text-gray-700">
+            <span class="font-medium">이메일:</span> {{ email }}
+          </p>
+        </div>
+
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2"
             >새 비밀번호</label
@@ -69,7 +78,7 @@
           v-if="!success"
           type="submit"
           class="btn-primary w-full"
-          :disabled="isLoading || passwordMismatch"
+          :disabled="isLoading || passwordMismatch || !email || !code"
         >
           {{ isLoading ? "처리 중..." : "비밀번호 변경" }}
         </button>
@@ -88,7 +97,7 @@
 </template>
 
 <script>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { authAPI } from "@/utils/api";
 
@@ -97,12 +106,20 @@ export default {
   setup() {
     const route = useRoute();
     const router = useRouter();
-    const token = ref(route.query.token || "");
+    const email = ref(route.query.email || "");
+    const code = ref(route.query.code || "");
     const newPassword = ref("");
     const newPasswordConfirm = ref("");
     const error = ref(null);
     const success = ref(false);
     const isLoading = ref(false);
+
+    onMounted(() => {
+      if (!email.value || !code.value) {
+        error.value =
+          "유효하지 않은 접근입니다. 비밀번호 찾기 페이지에서 다시 시작해주세요.";
+      }
+    });
 
     const passwordMismatch = computed(() => {
       return (
@@ -113,8 +130,8 @@ export default {
     });
 
     async function handleResetPassword() {
-      if (!token.value) {
-        error.value = "유효하지 않은 토큰입니다.";
+      if (!email.value || !code.value) {
+        error.value = "유효하지 않은 접근입니다.";
         return;
       }
 
@@ -139,7 +156,7 @@ export default {
       error.value = null;
       isLoading.value = true;
       try {
-        await authAPI.resetPassword(token.value, newPassword.value);
+        await authAPI.resetPassword(email.value, code.value, newPassword.value);
         success.value = true;
       } catch (err) {
         error.value = err.response?.data?.message || "오류가 발생했습니다.";
@@ -149,7 +166,8 @@ export default {
     }
 
     return {
-      token,
+      email,
+      code,
       newPassword,
       newPasswordConfirm,
       error,

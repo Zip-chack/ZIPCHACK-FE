@@ -19,7 +19,48 @@
             placeholder="이메일 주소"
             class="input"
             required
+            :disabled="codeSent"
           />
+        </div>
+
+        <div v-if="codeSent" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2"
+              >인증 코드</label
+            >
+            <div class="flex gap-2">
+              <input
+                v-model="verificationCode"
+                type="text"
+                placeholder="6자리 인증 코드"
+                class="input flex-1"
+                maxlength="6"
+                required
+              />
+              <button
+                type="button"
+                @click="handleFindPassword"
+                class="btn-secondary whitespace-nowrap"
+                :disabled="isLoading"
+              >
+                재전송
+              </button>
+            </div>
+            <p class="text-xs text-gray-500 mt-1">
+              인증 코드가 전송되었습니다. 이메일을 확인해주세요. (10분간 유효)
+            </p>
+          </div>
+
+          <button
+            type="button"
+            @click="handleVerifyCode"
+            class="btn-primary w-full"
+            :disabled="
+              isLoading || !verificationCode || verificationCode.length !== 6
+            "
+          >
+            {{ isLoading ? "확인 중..." : "인증 확인" }}
+          </button>
         </div>
 
         <div
@@ -30,15 +71,16 @@
         </div>
 
         <div
-          v-if="resetToken"
+          v-if="success"
           class="p-4 rounded-lg bg-green-50 border border-green-200"
         >
           <p class="text-green-800 mb-4">
-            비밀번호 재설정 토큰이 생성되었습니다. 아래 버튼을 클릭하여
-            비밀번호를 재설정하세요.
+            인증이 완료되었습니다. 아래 버튼을 클릭하여 비밀번호를 재설정하세요.
           </p>
           <router-link
-            :to="`/reset-password?token=${resetToken}`"
+            :to="`/reset-password?email=${encodeURIComponent(
+              email
+            )}&code=${verificationCode}`"
             class="btn-primary w-full block text-center"
           >
             비밀번호 재설정하기
@@ -46,12 +88,12 @@
         </div>
 
         <button
-          v-if="!resetToken"
+          v-if="!codeSent && !success"
           type="submit"
           class="btn-primary w-full"
           :disabled="isLoading"
         >
-          {{ isLoading ? "확인 중..." : "확인" }}
+          {{ isLoading ? "전송 중..." : "인증 코드 전송" }}
         </button>
 
         <p class="text-center text-sm text-gray-600">
@@ -75,18 +117,46 @@ export default {
   name: "FindPasswordPage",
   setup() {
     const email = ref("");
-    const resetToken = ref(null);
+    const verificationCode = ref("");
+    const codeSent = ref(false);
+    const success = ref(false);
     const error = ref(null);
     const isLoading = ref(false);
 
     async function handleFindPassword() {
       error.value = null;
-      resetToken.value = null;
       isLoading.value = true;
       try {
         const response = await authAPI.findPassword(email.value);
         if (response.data.success) {
-          resetToken.value = response.data.token;
+          codeSent.value = true;
+          success.value = false;
+        }
+      } catch (err) {
+        error.value = err.response?.data?.message || "오류가 발생했습니다.";
+      } finally {
+        isLoading.value = false;
+      }
+    }
+
+    async function handleVerifyCode() {
+      if (!verificationCode.value || verificationCode.value.length !== 6) {
+        error.value = "인증 코드를 입력해주세요.";
+        return;
+      }
+
+      error.value = null;
+      isLoading.value = true;
+      try {
+        const response = await authAPI.verifyPasswordResetCode(
+          email.value,
+          verificationCode.value
+        );
+        if (response.data.success) {
+          success.value = true;
+        } else {
+          error.value =
+            response.data.message || "인증 코드가 일치하지 않습니다.";
         }
       } catch (err) {
         error.value = err.response?.data?.message || "오류가 발생했습니다.";
@@ -97,10 +167,13 @@ export default {
 
     return {
       email,
-      resetToken,
+      verificationCode,
+      codeSent,
+      success,
       error,
       isLoading,
       handleFindPassword,
+      handleVerifyCode,
     };
   },
 };

@@ -11,12 +11,12 @@
       <form @submit.prevent="handleLogin" class="card p-8 space-y-6">
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2"
-            >이메일</label
+            >아이디 또는 이메일</label
           >
           <input
             v-model="email"
-            type="email"
-            placeholder="이메일 주소"
+            type="text"
+            placeholder="아이디 또는 이메일 주소"
             class="input"
             required
           />
