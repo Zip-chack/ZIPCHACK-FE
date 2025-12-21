@@ -82,6 +82,11 @@ const routes = [
     name: "EditProfile",
     component: () => import("@/views/user/EditProfilePage.vue"),
   },
+  {
+    path: "/my-page/listings",
+    name: "MyListings",
+    component: () => import("@/views/user/MyListingsPage.vue"),
+  },
 ];
 
 const router = createRouter({
