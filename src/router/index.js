@@ -68,6 +68,21 @@ const routes = [
     component: () => import("@/views/auth/RegisterPage.vue"),
   },
   {
+    path: "/find-email",
+    name: "FindEmail",
+    component: () => import("@/views/auth/FindEmailPage.vue"),
+  },
+  {
+    path: "/find-password",
+    name: "FindPassword",
+    component: () => import("@/views/auth/FindPasswordPage.vue"),
+  },
+  {
+    path: "/reset-password",
+    name: "ResetPassword",
+    component: () => import("@/views/auth/ResetPasswordPage.vue"),
+  },
+  {
     path: "/my-chats",
     name: "MyChats",
     component: () => import("@/views/chat/MyChatsPage.vue"),
