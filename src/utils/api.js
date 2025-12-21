@@ -100,6 +100,24 @@ export const authAPI = {
 
   checkEmail: (email) =>
     apiClient.get(API_ENDPOINTS.AUTH.CHECK_EMAIL, { params: { email } }),
+
+  checkUsername: (username) =>
+    apiClient.get(API_ENDPOINTS.AUTH.CHECK_USERNAME, { params: { username } }),
+
+  findEmail: (email) =>
+    apiClient.post(API_ENDPOINTS.AUTH.FIND_EMAIL, { email }),
+
+  findPassword: (email) =>
+    apiClient.post(API_ENDPOINTS.AUTH.FIND_PASSWORD, { email }),
+
+  resetPassword: (token, newPassword) =>
+    apiClient.post(API_ENDPOINTS.AUTH.RESET_PASSWORD, { token, newPassword }),
+
+  sendVerificationCode: (email) =>
+    apiClient.post(API_ENDPOINTS.AUTH.SEND_VERIFICATION_CODE, { email }),
+
+  verifyEmail: (email, code) =>
+    apiClient.post(API_ENDPOINTS.AUTH.VERIFY_EMAIL, { email, code }),
 };
 
 // User API
