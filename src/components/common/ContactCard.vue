@@ -5,12 +5,24 @@
 
     <!-- 소유자가 아닌 경우: 연락하기 버튼들 -->
     <template v-if="!isOwner">
-      <button class="btn-primary w-full mb-3" @click="handlePhoneCall">
-        전화 문의
-      </button>
-      <button class="btn-secondary w-full" @click="handleMessage">
-        메시지 보내기
-      </button>
+      <div v-if="status === 'COMPLETED'" class="w-full mb-3 text-center">
+        <button class="btn-disabled w-full cursor-not-allowed bg-gray-300 text-gray-600 py-2 px-4 rounded" disabled>
+          거래 완료된 매물
+        </button>
+      </div>
+      <div v-else-if="status === 'RESERVED'" class="w-full mb-3 text-center">
+        <button class="btn-disabled w-full cursor-not-allowed bg-yellow-100 text-yellow-700 py-2 px-4 rounded" disabled>
+          예약중인 매물
+        </button>
+      </div>
+      <template v-else>
+        <button class="btn-primary w-full mb-3" @click="handlePhoneCall">
+          전화 문의
+        </button>
+        <button class="btn-secondary w-full" @click="handleMessage">
+          메시지 보내기
+        </button>
+      </template>
     </template>
 
     <!-- 소유자인 경우: 매물 수정 버튼 -->
@@ -36,6 +48,10 @@ export default {
     isOwner: {
       type: Boolean,
       default: false,
+    },
+    status: {
+      type: String,
+      default: 'AVAILABLE',
     },
   },
   emits: ["start-chat"], // Declare the emitted event

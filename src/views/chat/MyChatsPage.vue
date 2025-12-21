@@ -57,7 +57,7 @@
       :class="selectedRoomId ? 'w-1/2 opacity-100' : 'w-0 opacity-0'"
     >
       <div v-if="selectedRoomId" class="h-full border rounded-xl overflow-hidden shadow-lg bg-white">
-        <ChatRoomPage :roomId="selectedRoomId" />
+        <ChatRoomPage :roomId="selectedRoomId" @room-completed="handleRoomCompleted" />
       </div>
       <div v-else class="h-full flex items-center justify-center bg-gray-50 border rounded-xl">
         <p class="text-gray-400">채팅방을 선택해주세요</p>
@@ -91,6 +91,13 @@ onMounted(async () => {
 
 function selectRoom(roomId) {
   selectedRoomId.value = roomId;
+}
+
+function handleRoomCompleted(roomId) {
+  const room = chatRooms.value.find(r => r.roomId === roomId);
+  if (room) {
+    room.status = 'COMPLETED';
+  }
 }
 
 async function deleteChat(roomId) {

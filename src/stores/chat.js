@@ -309,6 +309,7 @@ export const useChatStore = defineStore("chat", {
       if (!this.currentRoomId) return;
       try {
         await api.patch(`/chat/rooms/${this.currentRoomId}/complete`);
+        this.currentRoomStatus = 'COMPLETED';
       } catch (error) {
         console.error("채팅 완료 처리에 실패했습니다:", error);
       }

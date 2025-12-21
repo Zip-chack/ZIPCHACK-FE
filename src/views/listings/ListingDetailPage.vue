@@ -64,6 +64,7 @@
         <ContactCard
           :listingId="listing.id"
           :isOwner="isOwner"
+          :status="listing.status"
           @start-chat="startChat"
         />
 

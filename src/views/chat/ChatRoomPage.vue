@@ -66,6 +66,8 @@ const props = defineProps({
   },
 });
 
+const emit = defineEmits(["room-completed"]);
+
 const chatStore = useChatStore();
 const authStore = useAuthStore();
 const route = useRoute();
@@ -113,6 +115,7 @@ async function completeChat() {
     confirm("거래를 완료 처리하시겠습니까? 더 이상 채팅을 보낼 수 없습니다.")
   ) {
     await chatStore.completeChat();
+    emit("room-completed", chatStore.currentRoomId);
   }
 }
 
