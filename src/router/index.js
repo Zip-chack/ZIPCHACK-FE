@@ -72,6 +72,11 @@ const routes = [
     name: "MyChats",
     component: () => import("@/views/chat/MyChatsPage.vue"),
   },
+  {
+    path: "/my-page",
+    name: "MyPage",
+    component: () => import("@/views/user/MyPage.vue"),
+  },
 ];
 
 const router = createRouter({
