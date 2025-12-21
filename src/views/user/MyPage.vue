@@ -91,7 +91,10 @@
         </router-link>
 
         <!-- 내 리뷰 -->
-        <div class="card p-6 hover:shadow-lg transition-shadow cursor-pointer">
+        <router-link
+          to="/my-page/reviews"
+          class="card p-6 hover:shadow-lg transition-shadow cursor-pointer"
+        >
           <div class="flex items-center justify-between">
             <div>
               <h3 class="text-lg font-semibold text-gray-900 mb-2">내 리뷰</h3>
@@ -101,7 +104,7 @@
               {{ summary?.reviewCount || 0 }}
             </div>
           </div>
-        </div>
+        </router-link>
       </div>
 
       <!-- 설정 섹션 -->
