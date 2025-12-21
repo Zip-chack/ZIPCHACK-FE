@@ -31,7 +31,10 @@
       <!-- 정보 섹션 -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         <!-- 내 매물 -->
-        <div class="card p-6 hover:shadow-lg transition-shadow cursor-pointer">
+        <router-link
+          to="/my-page/listings"
+          class="card p-6 hover:shadow-lg transition-shadow cursor-pointer"
+        >
           <div class="flex items-center justify-between">
             <div>
               <h3 class="text-lg font-semibold text-gray-900 mb-2">내 매물</h3>
@@ -41,7 +44,7 @@
               {{ summary?.listingCount || 0 }}
             </div>
           </div>
-        </div>
+        </router-link>
 
         <!-- 찜한 매물 -->
         <router-link
