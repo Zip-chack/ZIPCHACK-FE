@@ -3,7 +3,7 @@
     <!-- Chat List Section -->
     <div 
       class="flex flex-col transition-all duration-300 ease-in-out h-full"
-      :class="selectedRoomId ? 'w-1/3' : 'w-full'"
+      :class="selectedRoomId ? 'w-1/2' : 'w-full'"
     >
       <h1 class="text-2xl font-bold mb-4 flex-shrink-0">내 채팅 목록</h1>
       
@@ -54,7 +54,7 @@
     <!-- Chat Room Section (Sliding Panel) -->
     <div 
       class="transition-all duration-300 ease-in-out h-full overflow-hidden"
-      :class="selectedRoomId ? 'w-2/3 opacity-100' : 'w-0 opacity-0'"
+      :class="selectedRoomId ? 'w-1/2 opacity-100' : 'w-0 opacity-0'"
     >
       <div v-if="selectedRoomId" class="h-full border rounded-xl overflow-hidden shadow-lg bg-white">
         <ChatRoomPage :roomId="selectedRoomId" />

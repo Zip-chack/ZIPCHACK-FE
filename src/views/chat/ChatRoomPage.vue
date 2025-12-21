@@ -8,7 +8,7 @@
         <div>
           <h3>상대방: {{ chatStore.targetUserNickname || "상대방" }}</h3>
           <span class="status-badge" :class="statusClass">{{
-            chatStore.currentRoomStatus
+            formattedStatus
           }}</span>
         </div>
         <button
@@ -79,6 +79,20 @@ const myId = computed(() => authStore.user?.id);
 const statusClass = computed(() => {
   if (!chatStore.currentRoomStatus) return "";
   return `status-${chatStore.currentRoomStatus.toLowerCase()}`;
+});
+
+const formattedStatus = computed(() => {
+  const status = chatStore.currentRoomStatus;
+  switch (status) {
+    case "WAITING":
+      return "대기중";
+    case "NEGOTIATING":
+      return "조율중";
+    case "COMPLETED":
+      return "거래완료";
+    default:
+      return status || "";
+  }
 });
 
 function getMessageClass(msg) {
