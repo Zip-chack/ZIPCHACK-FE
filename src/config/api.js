@@ -58,6 +58,13 @@ export const API_ENDPOINTS = {
     UPLOAD: "/images/upload",
     DELETE: "/images/delete",
   },
+
+  // User API 엔드포인트
+  USERS: {
+    SUMMARY: "/users/me/summary",
+    MY_LISTINGS: "/users/me/listings",
+    MY_REVIEWS: "/users/me/reviews",
+  },
 };
 
 // API 기본 URL 설정 (환경변수에서 가져오거나 기본값 사용)

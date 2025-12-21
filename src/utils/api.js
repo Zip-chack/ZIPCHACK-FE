@@ -99,6 +99,13 @@ export const authAPI = {
     apiClient.get(API_ENDPOINTS.AUTH.CHECK_EMAIL, { params: { email } }),
 };
 
+// User API
+export const userAPI = {
+  getMySummary: () => apiClient.get(API_ENDPOINTS.USERS.SUMMARY),
+  getMyListings: () => apiClient.get(API_ENDPOINTS.USERS.MY_LISTINGS),
+  getMyReviews: () => apiClient.get(API_ENDPOINTS.USERS.MY_REVIEWS),
+};
+
 // Listing API
 export const listingAPI = {
   getListings: (params) =>
