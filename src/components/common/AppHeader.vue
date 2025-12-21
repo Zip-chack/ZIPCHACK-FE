@@ -44,7 +44,12 @@
         <!-- Auth Buttons -->
         <div class="hidden md:flex items-center space-x-4">
           <template v-if="authStore.isLoggedIn">
-            <span class="text-gray-600">{{ authStore.user?.nickname }}님</span>
+            <router-link
+              to="/my-page"
+              class="text-gray-600 hover:text-primary-500 font-medium transition-colors cursor-pointer"
+            >
+              {{ authStore.user?.nickname }}님
+            </router-link>
             <button @click="authStore.logout" class="btn-secondary">
               로그아웃
             </button>
@@ -116,18 +121,30 @@
           <div class="pt-4 border-t border-gray-100">
             <template v-if="authStore.isLoggedIn">
               <div class="flex flex-col space-y-2">
-                <span class="text-gray-800 font-medium px-2">{{ authStore.user?.nickname }}님, 환영합니다.</span>
-                <button @click="authStore.logout" class="btn-secondary w-full text-center">
+                <router-link
+                  to="/my-page"
+                  class="text-gray-800 font-medium px-2 hover:text-primary-500 transition-colors"
+                >
+                  {{ authStore.user?.nickname }}님, 환영합니다.
+                </router-link>
+                <button
+                  @click="authStore.logout"
+                  class="btn-secondary w-full text-center"
+                >
                   로그아웃
                 </button>
               </div>
             </template>
             <template v-else>
               <div class="flex space-x-4">
-                <router-link to="/login" class="btn-secondary flex-1 text-center"
+                <router-link
+                  to="/login"
+                  class="btn-secondary flex-1 text-center"
                   >로그인</router-link
                 >
-                <router-link to="/register" class="btn-primary flex-1 text-center"
+                <router-link
+                  to="/register"
+                  class="btn-primary flex-1 text-center"
                   >회원가입</router-link
                 >
               </div>
@@ -155,7 +172,7 @@ export default {
     return {
       authStore,
       isMobileMenuOpen,
-      user
+      user,
     };
   },
 };
