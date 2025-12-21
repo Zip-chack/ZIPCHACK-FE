@@ -37,7 +37,9 @@
               <h3 class="text-lg font-semibold text-gray-900 mb-2">내 매물</h3>
               <p class="text-gray-600 text-sm">등록한 매물을 확인하세요</p>
             </div>
-            <div class="text-3xl font-bold text-primary-500">-</div>
+            <div class="text-3xl font-bold text-primary-500">
+              {{ summary?.listingCount || 0 }}
+            </div>
           </div>
         </div>
 
@@ -60,14 +62,28 @@
         <!-- 내 채팅 -->
         <router-link
           to="/my-chats"
-          class="card p-6 hover:shadow-lg transition-shadow cursor-pointer"
+          class="card p-6 hover:shadow-lg transition-shadow cursor-pointer relative"
         >
           <div class="flex items-center justify-between">
             <div>
               <h3 class="text-lg font-semibold text-gray-900 mb-2">내 채팅</h3>
               <p class="text-gray-600 text-sm">진행 중인 채팅을 확인하세요</p>
             </div>
-            <div class="text-3xl font-bold text-primary-500">-</div>
+            <div class="relative">
+              <div class="text-3xl font-bold text-primary-500">
+                {{ summary?.unreadMessageCount || 0 }}
+              </div>
+              <span
+                v-if="(summary?.unreadMessageCount || 0) > 0"
+                class="absolute -top-2 -right-2 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold"
+              >
+                {{
+                  summary?.unreadMessageCount > 99
+                    ? "99+"
+                    : summary?.unreadMessageCount
+                }}
+              </span>
+            </div>
           </div>
         </router-link>
 
@@ -78,7 +94,9 @@
               <h3 class="text-lg font-semibold text-gray-900 mb-2">내 리뷰</h3>
               <p class="text-gray-600 text-sm">작성한 리뷰를 확인하세요</p>
             </div>
-            <div class="text-3xl font-bold text-primary-500">-</div>
+            <div class="text-3xl font-bold text-primary-500">
+              {{ summary?.reviewCount || 0 }}
+            </div>
           </div>
         </div>
       </div>
@@ -148,15 +166,18 @@
 </template>
 
 <script>
-import { computed } from "vue";
+import { computed, ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
+import { userAPI } from "@/utils/api";
 
 export default {
   name: "MyPage",
   setup() {
     const router = useRouter();
     const authStore = useAuthStore();
+    const summary = ref(null);
+    const isLoading = ref(false);
 
     // 사용자 이름의 첫 글자 추출
     const userInitial = computed(() => {
@@ -165,6 +186,27 @@ export default {
       return nickname.charAt(0).toUpperCase();
     });
 
+    // 마이페이지 데이터 로드
+    const loadMyPageData = async () => {
+      if (!authStore.isLoggedIn) {
+        router.push("/login");
+        return;
+      }
+
+      isLoading.value = true;
+      try {
+        const response = await userAPI.getMySummary();
+        console.log("마이페이지 데이터 응답:", response.data);
+        summary.value = response.data;
+      } catch (error) {
+        console.error("마이페이지 데이터 로드 실패:", error);
+        console.error("에러 상세:", error.response?.data);
+        // 에러가 발생해도 페이지는 표시
+      } finally {
+        isLoading.value = false;
+      }
+    };
+
     const handleLogout = async () => {
       if (confirm("로그아웃 하시겠습니까?")) {
         await authStore.logout();
@@ -172,9 +214,15 @@ export default {
       }
     };
 
+    onMounted(() => {
+      loadMyPageData();
+    });
+
     return {
       authStore,
       userInitial,
+      summary,
+      isLoading,
       handleLogout,
     };
   },
