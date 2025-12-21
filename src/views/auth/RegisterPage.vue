@@ -26,13 +26,34 @@
           <label class="block text-sm font-medium text-gray-700 mb-2"
             >이메일</label
           >
-          <input
-            v-model="email"
-            type="email"
-            placeholder="이메일 주소"
-            class="input"
-            required
-          />
+          <div class="flex gap-2">
+            <input
+              v-model="email"
+              type="email"
+              placeholder="이메일 주소"
+              class="input flex-1"
+              :class="{ 'border-red-500': emailError }"
+              required
+              @input="clearEmailError"
+            />
+            <button
+              type="button"
+              @click="checkEmailDuplicate"
+              :disabled="!email || isCheckingEmail"
+              class="btn-secondary whitespace-nowrap px-4"
+            >
+              {{ isCheckingEmail ? "확인 중..." : "중복 확인" }}
+            </button>
+          </div>
+          <p v-if="emailError" class="mt-1 text-sm text-red-600">
+            {{ emailError }}
+          </p>
+          <p
+            v-else-if="emailChecked && !emailError && email"
+            class="mt-1 text-sm text-green-600"
+          >
+            사용 가능한 이메일입니다.
+          </p>
         </div>
 
         <div>
@@ -112,7 +133,10 @@ export default {
     const passwordConfirm = ref("");
     const passwordError = ref("");
     const passwordConfirmError = ref("");
+    const emailError = ref("");
     const error = ref(null);
+    const isCheckingEmail = ref(false);
+    const emailChecked = ref(false);
 
     // 비밀번호 조건 만족 여부 확인
     const isPasswordValid = computed(() => {
@@ -173,9 +197,84 @@ export default {
       }
     }
 
+    function clearEmailError() {
+      if (emailError.value) {
+        emailError.value = "";
+      }
+      emailChecked.value = false;
+    }
+
+    async function checkEmailDuplicate() {
+      if (!email.value) {
+        emailError.value = "이메일을 입력해주세요.";
+        return;
+      }
+
+      // 이메일 형식 검증
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email.value)) {
+        emailError.value = "올바른 이메일 형식이 아닙니다.";
+        emailChecked.value = false;
+        return;
+      }
+
+      isCheckingEmail.value = true;
+      emailError.value = "";
+      emailChecked.value = false;
+
+      try {
+        const { useAuthStore } = await import("@/stores/auth");
+        const authStore = useAuthStore();
+        const response = await authStore.checkEmail(email.value);
+
+        if (response.exists) {
+          emailError.value = "이미 사용 중인 이메일입니다.";
+          emailChecked.value = false;
+        } else {
+          emailError.value = "";
+          emailChecked.value = true;
+        }
+      } catch (err) {
+        // 에러 응답에서 중복 여부 확인
+        const errorMessage =
+          err.response?.data?.error ||
+          err.response?.data?.message ||
+          err.message ||
+          "";
+
+        // "이미 존재하는 이메일" 또는 "이미 사용 중인 이메일" 문구가 있으면 중복으로 처리
+        if (
+          errorMessage.includes("이미 존재하는 이메일") ||
+          errorMessage.includes("이미 사용 중인 이메일") ||
+          errorMessage.includes("존재하는 이메일")
+        ) {
+          emailError.value = "이미 사용 중인 이메일입니다.";
+          emailChecked.value = false;
+        } else {
+          // 실제 서버 오류인 경우에만 오류 메시지 표시
+          emailError.value =
+            errorMessage || "이메일 확인 중 오류가 발생했습니다.";
+          emailChecked.value = false;
+        }
+      } finally {
+        isCheckingEmail.value = false;
+      }
+    }
+
     async function handleRegister() {
       // 에러 초기화
       error.value = null;
+
+      // 이메일 중복 확인 체크
+      if (!emailChecked.value) {
+        alert("이메일 중복 확인을 해주세요.");
+        return;
+      }
+
+      if (emailError.value) {
+        alert(emailError.value);
+        return;
+      }
 
       // 비밀번호 조건 검사
       validatePassword();
@@ -212,13 +311,18 @@ export default {
       passwordConfirm,
       passwordError,
       passwordConfirmError,
+      emailError,
       error,
       isPasswordValid,
+      isCheckingEmail,
+      emailChecked,
       handleRegister,
       validatePassword,
       validatePasswordConfirm,
       clearPasswordError,
       clearPasswordConfirmError,
+      clearEmailError,
+      checkEmailDuplicate,
     };
   },
 };
