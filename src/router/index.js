@@ -87,6 +87,11 @@ const routes = [
     name: "MyListings",
     component: () => import("@/views/user/MyListingsPage.vue"),
   },
+  {
+    path: "/my-page/reviews",
+    name: "MyReviews",
+    component: () => import("@/views/user/MyReviewsPage.vue"),
+  },
 ];
 
 const router = createRouter({
