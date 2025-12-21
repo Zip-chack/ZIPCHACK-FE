@@ -95,6 +95,9 @@ export const authAPI = {
 
   getCurrentUser: () => apiClient.get(API_ENDPOINTS.AUTH.ME),
 
+  updateUser: (userData) =>
+    apiClient.put(API_ENDPOINTS.AUTH.UPDATE_ME, userData),
+
   checkEmail: (email) =>
     apiClient.get(API_ENDPOINTS.AUTH.CHECK_EMAIL, { params: { email } }),
 };

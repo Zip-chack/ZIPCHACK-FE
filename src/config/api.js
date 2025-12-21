@@ -6,6 +6,7 @@ export const API_ENDPOINTS = {
     REGISTER: "/auth/register",
     LOGOUT: "/auth/logout",
     ME: "/auth/me",
+    UPDATE_ME: "/auth/me",
     CHECK_EMAIL: "/auth/check-email",
   },
 

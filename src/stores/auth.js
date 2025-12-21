@@ -111,6 +111,25 @@ export const useAuthStore = defineStore("auth", () => {
     }
   }
 
+  async function updateUser(userData) {
+    isLoading.value = true;
+    error.value = null;
+    try {
+      const response = await authAPI.updateUser(userData);
+      user.value = response.data;
+      return { success: true, user: response.data };
+    } catch (err) {
+      const errorMessage =
+        err.response?.data?.error ||
+        err.response?.data?.message ||
+        "회원 정보 수정에 실패했습니다.";
+      error.value = errorMessage;
+      return { success: false, error: errorMessage };
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
   return {
     user,
     isLoading,
@@ -122,5 +141,6 @@ export const useAuthStore = defineStore("auth", () => {
     logout,
     register,
     checkEmail,
+    updateUser,
   };
 });
