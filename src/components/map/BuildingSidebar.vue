@@ -208,7 +208,17 @@
           <div
             class="relative w-full h-40 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden"
           >
-            <div class="absolute inset-0 flex items-center justify-center">
+            <!-- 로드뷰가 있으면 로드뷰 표시 -->
+            <div
+              v-if="building.lat && building.lng"
+              :id="`building-roadview-${building.id}`"
+              class="w-full h-full"
+            ></div>
+            <!-- 로드뷰가 없으면 플레이스홀더 -->
+            <div
+              v-else
+              class="absolute inset-0 flex items-center justify-center"
+            >
               <svg
                 class="w-16 h-16 text-gray-300"
                 fill="none"
@@ -225,7 +235,7 @@
             </div>
             <!-- 카테고리 뱃지 -->
             <div
-              class="absolute top-3 left-3 bg-primary-500 text-white text-xs font-semibold px-2.5 py-1 rounded-md shadow-sm"
+              class="absolute top-3 left-3 bg-primary-500 text-white text-xs font-semibold px-2.5 py-1 rounded-md shadow-sm z-10"
             >
               건물
             </div>
@@ -281,7 +291,7 @@
 </template>
 
 <script>
-import { ref } from "vue";
+import { ref, watch, onMounted, onUnmounted, nextTick } from "vue";
 import ListingCard from "@/components/listings/ListingCard.vue";
 import AddressSearchBar from "@/components/map/AddressSearchBar.vue";
 import NearbyCommerceInfo from "@/components/common/NearbyCommerceInfo.vue";
@@ -330,10 +340,165 @@ export default {
   ],
   setup(props, { emit }) {
     const searchQuery = ref("");
+    const roadviewInstances = new Map(); // 빌딩 ID별 로드뷰 인스턴스 저장
 
     function handleAddressSearch(query) {
       emit("address-search", query);
     }
+
+    function loadKakaoMapSDK() {
+      // 이미 로드되어 있으면 true 반환
+      if (
+        typeof window.kakao !== "undefined" &&
+        window.kakao.maps &&
+        window.kakao.maps.Roadview
+      ) {
+        return Promise.resolve();
+      }
+
+      // SDK 스크립트 로드
+      const kakaoKey = import.meta.env.VITE_KAKAO_MAP_JS_KEY;
+      if (!kakaoKey) {
+        console.error("카카오맵 JavaScript 키가 설정되지 않았습니다.");
+        return Promise.reject("카카오맵 키 없음");
+      }
+
+      return new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${kakaoKey}&autoload=false&libraries=services`;
+        script.async = true;
+        script.onload = () => {
+          try {
+            window.kakao.maps.load(() => {
+              resolve();
+            });
+          } catch (error) {
+            console.error("카카오맵 SDK 초기화 실패:", error);
+            reject(error);
+          }
+        };
+        script.onerror = () => {
+          console.error("카카오맵 SDK 스크립트 로드 실패.");
+          reject("스크립트 로드 실패");
+        };
+        document.head.appendChild(script);
+      });
+    }
+
+    async function initRoadviewForBuilding(building) {
+      if (!building.lat || !building.lng) {
+        return;
+      }
+
+      try {
+        await loadKakaoMapSDK();
+
+        if (
+          typeof window.kakao === "undefined" ||
+          !window.kakao.maps ||
+          !window.kakao.maps.Roadview
+        ) {
+          console.error("카카오맵 로드뷰 SDK가 로드되지 않았습니다.");
+          return;
+        }
+
+        const containerId = `building-roadview-${building.id}`;
+        const container = document.getElementById(containerId);
+        if (!container) {
+          return;
+        }
+
+        // 기존 로드뷰가 있으면 제거
+        if (roadviewInstances.has(building.id)) {
+          const oldInstance = roadviewInstances.get(building.id);
+          if (oldInstance.roadview) {
+            oldInstance.roadview = null;
+          }
+          if (oldInstance.roadviewClient) {
+            oldInstance.roadviewClient = null;
+          }
+        }
+
+        // 로드뷰 생성
+        const roadview = new window.kakao.maps.Roadview(container);
+        const roadviewClient = new window.kakao.maps.RoadviewClient();
+
+        // 위치 설정
+        const position = new window.kakao.maps.LatLng(
+          building.lat,
+          building.lng
+        );
+
+        // 가장 가까운 로드뷰 파노라마 ID 가져오기
+        roadviewClient.getNearestPanoId(position, 50, function (panoId) {
+          if (panoId === null) {
+            console.warn(`빌딩 ${building.id}의 로드뷰를 사용할 수 없습니다.`);
+            return;
+          }
+          roadview.setPanoId(panoId, position);
+        });
+
+        // 인스턴스 저장
+        roadviewInstances.set(building.id, {
+          roadview,
+          roadviewClient,
+        });
+      } catch (error) {
+        console.error(`빌딩 ${building.id}의 로드뷰 초기화 실패:`, error);
+      }
+    }
+
+    function initAllRoadviews() {
+      if (!props.buildings || props.buildings.length === 0) {
+        return;
+      }
+
+      nextTick(() => {
+        props.buildings.forEach((building) => {
+          if (building.lat && building.lng) {
+            initRoadviewForBuilding(building);
+          }
+        });
+      });
+    }
+
+    // 빌딩 목록이 변경될 때 로드뷰 초기화
+    watch(
+      () => props.buildings,
+      () => {
+        // 기존 로드뷰 정리
+        roadviewInstances.forEach((instance) => {
+          if (instance.roadview) {
+            instance.roadview = null;
+          }
+          if (instance.roadviewClient) {
+            instance.roadviewClient = null;
+          }
+        });
+        roadviewInstances.clear();
+
+        // 새 로드뷰 초기화
+        initAllRoadviews();
+      },
+      { deep: true }
+    );
+
+    onMounted(() => {
+      initAllRoadviews();
+    });
+
+    onUnmounted(() => {
+      // 모든 로드뷰 정리
+      roadviewInstances.forEach((instance) => {
+        if (instance.roadview) {
+          instance.roadview = null;
+        }
+        if (instance.roadviewClient) {
+          instance.roadviewClient = null;
+        }
+      });
+      roadviewInstances.clear();
+    });
 
     return {
       searchQuery,
