@@ -104,14 +104,24 @@ export const authAPI = {
   checkUsername: (username) =>
     apiClient.get(API_ENDPOINTS.AUTH.CHECK_USERNAME, { params: { username } }),
 
-  findEmail: (email) =>
-    apiClient.post(API_ENDPOINTS.AUTH.FIND_EMAIL, { email }),
+  findUsername: (email, name) =>
+    apiClient.post(API_ENDPOINTS.AUTH.FIND_USERNAME, { email, name }),
 
   findPassword: (email) =>
     apiClient.post(API_ENDPOINTS.AUTH.FIND_PASSWORD, { email }),
 
-  resetPassword: (token, newPassword) =>
-    apiClient.post(API_ENDPOINTS.AUTH.RESET_PASSWORD, { token, newPassword }),
+  verifyPasswordResetCode: (email, code) =>
+    apiClient.post(API_ENDPOINTS.AUTH.VERIFY_PASSWORD_RESET_CODE, {
+      email,
+      code,
+    }),
+
+  resetPassword: (email, code, newPassword) =>
+    apiClient.post(API_ENDPOINTS.AUTH.RESET_PASSWORD, {
+      email,
+      code,
+      newPassword,
+    }),
 
   sendVerificationCode: (email) =>
     apiClient.post(API_ENDPOINTS.AUTH.SEND_VERIFICATION_CODE, { email }),
