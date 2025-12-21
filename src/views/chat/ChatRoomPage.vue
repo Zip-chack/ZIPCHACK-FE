@@ -59,8 +59,16 @@ import { useRoute } from "vue-router";
 import { useChatStore } from "@/stores/chat";
 import { useAuthStore } from "@/stores/auth";
 
+const props = defineProps({
+  roomId: {
+    type: [String, Number],
+    default: null,
+  },
+});
+
 const chatStore = useChatStore();
 const authStore = useAuthStore();
+const route = useRoute();
 
 const newMessage = ref("");
 const messagesArea = ref(null);
@@ -110,12 +118,20 @@ watch(
   { deep: true, flush: "post" }
 );
 
-const route = useRoute();
+// Watch for prop changes to switch rooms dynamically
+watch(
+  () => props.roomId,
+  (newId) => {
+    if (newId) {
+      chatStore.joinRoomById(newId);
+    }
+  }
+);
 
 onMounted(() => {
-  const roomId = route.params.roomId;
-  if (roomId) {
-    chatStore.joinRoomById(roomId);
+  const targetRoomId = props.roomId || route.params.roomId;
+  if (targetRoomId) {
+    chatStore.joinRoomById(targetRoomId);
   }
 });
 
@@ -129,11 +145,13 @@ onUnmounted(() => {
   padding: 20px;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, sans-serif;
+  height: 100%; /* Ensure it fills parent */
+  box-sizing: border-box;
 }
 .chat-container {
   display: flex;
   flex-direction: column;
-  height: 75vh;
+  height: 100%; /* Changed from 75vh to fill parent */
   border: 1px solid #e0e0e0;
   border-radius: 12px;
   background: #fff;
