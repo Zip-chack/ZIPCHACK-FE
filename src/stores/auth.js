@@ -90,10 +90,24 @@ export const useAuthStore = defineStore("auth", () => {
       user.value = userData;
       return { success: true };
     } catch (err) {
-      error.value = err.response?.data?.message || "회원가입에 실패했습니다.";
-      return { success: false, error: error.value };
+      // 백엔드에서 error 또는 message 필드로 에러 메시지를 반환
+      const errorMessage =
+        err.response?.data?.error ||
+        err.response?.data?.message ||
+        "회원가입에 실패했습니다.";
+      error.value = errorMessage;
+      return { success: false, error: errorMessage };
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  async function checkEmail(email) {
+    try {
+      const response = await authAPI.checkEmail(email);
+      return response.data;
+    } catch (err) {
+      throw err;
     }
   }
 
@@ -107,5 +121,6 @@ export const useAuthStore = defineStore("auth", () => {
     login,
     logout,
     register,
+    checkEmail,
   };
 });

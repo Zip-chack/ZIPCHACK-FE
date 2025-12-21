@@ -94,6 +94,9 @@ export const authAPI = {
   logout: () => apiClient.post(API_ENDPOINTS.AUTH.LOGOUT),
 
   getCurrentUser: () => apiClient.get(API_ENDPOINTS.AUTH.ME),
+
+  checkEmail: (email) =>
+    apiClient.get(API_ENDPOINTS.AUTH.CHECK_EMAIL, { params: { email } }),
 };
 
 // Listing API
