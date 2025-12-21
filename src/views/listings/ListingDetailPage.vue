@@ -3,6 +3,17 @@
     <div v-if="listing" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
       <!-- Main Content -->
       <div class="lg:col-span-2 space-y-6">
+        <!-- Owner Actions -->
+        <div v-if="isOwner" class="flex justify-end gap-3 mb-4">
+          <router-link
+            :to="`/listings/${listing.id}/edit`"
+            class="btn-secondary text-sm"
+          >
+            수정
+          </router-link>
+          <button @click="handleDelete" class="btn-danger text-sm">삭제</button>
+        </div>
+
         <!-- Basic Info Component -->
         <ListingBasicInfo
           :listing="listing"
@@ -114,7 +125,7 @@ import { useRoute, useRouter } from "vue-router"; // Added useRouter
 import { useListingStore } from "@/stores/listing";
 import { useChatStore } from "@/stores/chat"; // Added useChatStore
 import { useAuthStore } from "@/stores/auth";
-import { reviewAPI } from "@/utils/api";
+import { reviewAPI, listingAPI } from "@/utils/api";
 import ReviewCard from "@/components/common/ReviewCard.vue";
 import ListingBasicInfo from "@/components/listings/ListingBasicInfo.vue";
 import NearbyCommerceInfo from "@/components/common/NearbyCommerceInfo.vue";
@@ -142,10 +153,11 @@ const isOwner = computed(() => {
 });
 
 // Chat initiation function
-const startChat = async (id) => { // Takes id from emitted event
+const startChat = async (id) => {
+  // Takes id from emitted event
   const roomId = await chatStore.enterRoom(id); // Use the passed id
   if (roomId) {
-    router.push({ name: 'ChatRoom', params: { roomId } });
+    router.push({ name: "ChatRoom", params: { roomId } });
   } else {
     // Error message already handled by chatStore.enterRoom
   }
@@ -153,6 +165,25 @@ const startChat = async (id) => { // Takes id from emitted event
 
 const toggleFavorite = (id) => {
   listingStore.toggleFavorite(id);
+};
+
+// 매물 삭제
+const handleDelete = async () => {
+  if (!confirm("정말 이 매물을 삭제하시겠습니까?")) {
+    return;
+  }
+
+  try {
+    await listingAPI.deleteListing(listingId.value);
+    alert("매물이 삭제되었습니다.");
+    router.push("/listings");
+  } catch (error) {
+    const errorMessage =
+      error.response?.data?.error ||
+      error.response?.data?.message ||
+      "매물 삭제에 실패했습니다.";
+    alert(errorMessage);
+  }
 };
 
 onMounted(async () => {
@@ -207,3 +238,9 @@ onMounted(async () => {
   }
 });
 </script>
+
+<style scoped>
+.btn-danger {
+  @apply bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors;
+}
+</style>

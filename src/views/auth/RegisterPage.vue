@@ -11,15 +11,48 @@
       <form @submit.prevent="handleRegister" class="card p-8 space-y-6">
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2"
-            >닉네임</label
+            >이름</label
           >
           <input
-            v-model="nickname"
+            v-model="name"
             type="text"
-            placeholder="닉네임"
+            placeholder="실제 이름 (비밀번호/아이디 찾기 시 사용됩니다.)"
             class="input"
             required
           />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2"
+            >아이디</label
+          >
+          <div class="flex gap-2">
+            <input
+              v-model="username"
+              type="text"
+              placeholder="아이디"
+              class="input flex-1"
+              :class="{ 'border-red-500': usernameError }"
+              required
+              @input="clearUsernameError"
+            />
+            <button
+              type="button"
+              @click="checkUsernameDuplicate"
+              :disabled="!username || isCheckingUsername"
+              class="btn-secondary whitespace-nowrap px-4"
+            >
+              {{ isCheckingUsername ? "확인 중..." : "중복 확인" }}
+            </button>
+          </div>
+          <p v-if="usernameError" class="mt-1 text-sm text-red-600">
+            {{ usernameError }}
+          </p>
+          <p
+            v-else-if="usernameChecked && !usernameError && username"
+            class="mt-1 text-sm text-green-600"
+          >
+            사용 가능한 아이디입니다.
+          </p>
         </div>
 
         <div>
@@ -38,21 +71,58 @@
             />
             <button
               type="button"
-              @click="checkEmailDuplicate"
-              :disabled="!email || isCheckingEmail"
+              @click="sendVerificationCode"
+              :disabled="!email || isSendingCode || emailVerified"
               class="btn-secondary whitespace-nowrap px-4"
             >
-              {{ isCheckingEmail ? "확인 중..." : "중복 확인" }}
+              {{
+                isSendingCode
+                  ? "전송 중..."
+                  : emailVerified
+                  ? "인증 완료"
+                  : "인증 코드 전송"
+              }}
             </button>
           </div>
           <p v-if="emailError" class="mt-1 text-sm text-red-600">
             {{ emailError }}
           </p>
           <p
-            v-else-if="emailChecked && !emailError && email"
+            v-if="codeSent && !emailVerified"
             class="mt-1 text-sm text-green-600"
           >
-            사용 가능한 이메일입니다.
+            인증 코드가 이메일로 전송되었습니다.
+          </p>
+        </div>
+
+        <!-- 이메일 인증 코드 입력 -->
+        <div v-if="codeSent && !emailVerified">
+          <label class="block text-sm font-medium text-gray-700 mb-2"
+            >인증 코드</label
+          >
+          <div class="flex gap-2">
+            <input
+              v-model="verificationCode"
+              type="text"
+              placeholder="인증 코드 6자리"
+              class="input flex-1"
+              :class="{ 'border-red-500': verificationError }"
+              maxlength="6"
+            />
+            <button
+              type="button"
+              @click="verifyEmailCode"
+              :disabled="!verificationCode || isVerifying"
+              class="btn-secondary whitespace-nowrap px-4"
+            >
+              {{ isVerifying ? "확인 중..." : "인증 확인" }}
+            </button>
+          </div>
+          <p v-if="verificationError" class="mt-1 text-sm text-red-600">
+            {{ verificationError }}
+          </p>
+          <p v-else-if="emailVerified" class="mt-1 text-sm text-green-600">
+            이메일 인증이 완료되었습니다.
           </p>
         </div>
 
@@ -127,16 +197,24 @@ export default {
     const router = useRouter();
     const authStore = useAuthStore();
 
-    const nickname = ref("");
+    const username = ref("");
+    const name = ref("");
     const email = ref("");
     const password = ref("");
     const passwordConfirm = ref("");
     const passwordError = ref("");
     const passwordConfirmError = ref("");
     const emailError = ref("");
+    const usernameError = ref("");
     const error = ref(null);
-    const isCheckingEmail = ref(false);
-    const emailChecked = ref(false);
+    const isCheckingUsername = ref(false);
+    const usernameChecked = ref(false);
+    const codeSent = ref(false);
+    const isSendingCode = ref(false);
+    const verificationCode = ref("");
+    const isVerifying = ref(false);
+    const verificationError = ref("");
+    const emailVerified = ref(false);
 
     // 비밀번호 조건 만족 여부 확인
     const isPasswordValid = computed(() => {
@@ -201,10 +279,73 @@ export default {
       if (emailError.value) {
         emailError.value = "";
       }
-      emailChecked.value = false;
+      codeSent.value = false;
+      emailVerified.value = false;
+      verificationCode.value = "";
+      verificationError.value = "";
     }
 
-    async function checkEmailDuplicate() {
+    function clearUsernameError() {
+      if (usernameError.value) {
+        usernameError.value = "";
+      }
+      usernameChecked.value = false;
+    }
+
+    async function checkUsernameDuplicate() {
+      if (!username.value) {
+        usernameError.value = "아이디를 입력해주세요.";
+        return;
+      }
+
+      // 아이디 형식 검증 (영문, 숫자, 4-20자)
+      const usernameRegex = /^[a-zA-Z0-9]{4,20}$/;
+      if (!usernameRegex.test(username.value)) {
+        usernameError.value =
+          "아이디는 4-20자의 영문과 숫자만 사용 가능합니다.";
+        usernameChecked.value = false;
+        return;
+      }
+
+      isCheckingUsername.value = true;
+      usernameError.value = "";
+      usernameChecked.value = false;
+
+      try {
+        const response = await authStore.checkUsername(username.value);
+
+        if (response.exists) {
+          usernameError.value = "이미 사용 중인 아이디입니다.";
+          usernameChecked.value = false;
+        } else {
+          usernameError.value = "";
+          usernameChecked.value = true;
+        }
+      } catch (err) {
+        const errorMessage =
+          err.response?.data?.error ||
+          err.response?.data?.message ||
+          err.message ||
+          "";
+
+        if (
+          errorMessage.includes("이미 존재하는 아이디") ||
+          errorMessage.includes("이미 사용 중인 아이디") ||
+          errorMessage.includes("존재하는 아이디")
+        ) {
+          usernameError.value = "이미 사용 중인 아이디입니다.";
+          usernameChecked.value = false;
+        } else {
+          usernameError.value =
+            errorMessage || "아이디 확인 중 오류가 발생했습니다.";
+          usernameChecked.value = false;
+        }
+      } finally {
+        isCheckingUsername.value = false;
+      }
+    }
+
+    async function sendVerificationCode() {
       if (!email.value) {
         emailError.value = "이메일을 입력해주세요.";
         return;
@@ -214,50 +355,65 @@ export default {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email.value)) {
         emailError.value = "올바른 이메일 형식이 아닙니다.";
-        emailChecked.value = false;
         return;
       }
 
-      isCheckingEmail.value = true;
+      isSendingCode.value = true;
       emailError.value = "";
-      emailChecked.value = false;
+      verificationError.value = "";
 
       try {
-        const { useAuthStore } = await import("@/stores/auth");
-        const authStore = useAuthStore();
-        const response = await authStore.checkEmail(email.value);
-
-        if (response.exists) {
-          emailError.value = "이미 사용 중인 이메일입니다.";
-          emailChecked.value = false;
-        } else {
-          emailError.value = "";
-          emailChecked.value = true;
-        }
+        await authStore.sendVerificationCode(email.value);
+        codeSent.value = true;
       } catch (err) {
-        // 에러 응답에서 중복 여부 확인
         const errorMessage =
           err.response?.data?.error ||
           err.response?.data?.message ||
-          err.message ||
-          "";
+          "인증 코드 전송에 실패했습니다.";
 
-        // "이미 존재하는 이메일" 또는 "이미 사용 중인 이메일" 문구가 있으면 중복으로 처리
+        // 이미 가입된 이메일인 경우
         if (
-          errorMessage.includes("이미 존재하는 이메일") ||
+          errorMessage.includes("이미 가입된 이메일") ||
           errorMessage.includes("이미 사용 중인 이메일") ||
           errorMessage.includes("존재하는 이메일")
         ) {
           emailError.value = "이미 사용 중인 이메일입니다.";
-          emailChecked.value = false;
         } else {
-          // 실제 서버 오류인 경우에만 오류 메시지 표시
-          emailError.value =
-            errorMessage || "이메일 확인 중 오류가 발생했습니다.";
-          emailChecked.value = false;
+          emailError.value = errorMessage;
         }
+        codeSent.value = false;
       } finally {
-        isCheckingEmail.value = false;
+        isSendingCode.value = false;
+      }
+    }
+
+    async function verifyEmailCode() {
+      if (!verificationCode.value) {
+        verificationError.value = "인증 코드를 입력해주세요.";
+        return;
+      }
+
+      if (verificationCode.value.length !== 6) {
+        verificationError.value = "인증 코드는 6자리입니다.";
+        return;
+      }
+
+      isVerifying.value = true;
+      verificationError.value = "";
+
+      try {
+        await authStore.verifyEmail(email.value, verificationCode.value);
+        emailVerified.value = true;
+        verificationError.value = "";
+      } catch (err) {
+        const errorMessage =
+          err.response?.data?.error ||
+          err.response?.data?.message ||
+          "인증 코드 확인에 실패했습니다.";
+        verificationError.value = errorMessage;
+        emailVerified.value = false;
+      } finally {
+        isVerifying.value = false;
       }
     }
 
@@ -265,14 +421,38 @@ export default {
       // 에러 초기화
       error.value = null;
 
-      // 이메일 중복 확인 체크
-      if (!emailChecked.value) {
-        alert("이메일 중복 확인을 해주세요.");
+      // 아이디 중복 확인 체크
+      if (!usernameChecked.value) {
+        alert("아이디 중복 확인을 해주세요.");
+        return;
+      }
+
+      if (usernameError.value) {
+        alert(usernameError.value);
+        return;
+      }
+
+      // 이메일 형식 검증
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email.value)) {
+        alert("올바른 이메일 형식이 아닙니다.");
         return;
       }
 
       if (emailError.value) {
         alert(emailError.value);
+        return;
+      }
+
+      // 이메일 인증 체크
+      if (!emailVerified.value) {
+        alert("이메일 인증을 완료해주세요.");
+        return;
+      }
+
+      // 이름 체크
+      if (!name.value || name.value.trim() === "") {
+        alert("이름을 입력해주세요.");
         return;
       }
 
@@ -293,7 +473,8 @@ export default {
       const result = await authStore.register(
         email.value,
         password.value,
-        nickname.value
+        username.value,
+        name.value
       );
 
       if (result.success) {
@@ -305,24 +486,35 @@ export default {
     }
 
     return {
-      nickname,
+      username,
+      name,
       email,
       password,
       passwordConfirm,
       passwordError,
       passwordConfirmError,
       emailError,
+      usernameError,
       error,
       isPasswordValid,
-      isCheckingEmail,
-      emailChecked,
+      isCheckingUsername,
+      usernameChecked,
+      codeSent,
+      isSendingCode,
+      verificationCode,
+      isVerifying,
+      verificationError,
+      emailVerified,
       handleRegister,
       validatePassword,
       validatePasswordConfirm,
       clearPasswordError,
       clearPasswordConfirmError,
       clearEmailError,
-      checkEmailDuplicate,
+      clearUsernameError,
+      checkUsernameDuplicate,
+      sendVerificationCode,
+      verifyEmailCode,
     };
   },
 };

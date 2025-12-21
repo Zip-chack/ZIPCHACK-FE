@@ -77,11 +77,16 @@ export const useAuthStore = defineStore("auth", () => {
     }
   }
 
-  async function register(email, password, nickname) {
+  async function register(email, password, username, name) {
     isLoading.value = true;
     error.value = null;
     try {
-      const response = await authAPI.register({ email, password, nickname });
+      const response = await authAPI.register({
+        email,
+        password,
+        username,
+        name,
+      });
       const { token, user: userData } = response.data;
 
       if (token) {
@@ -105,6 +110,33 @@ export const useAuthStore = defineStore("auth", () => {
   async function checkEmail(email) {
     try {
       const response = await authAPI.checkEmail(email);
+      return response.data;
+    } catch (err) {
+      throw err;
+    }
+  }
+
+  async function checkUsername(username) {
+    try {
+      const response = await authAPI.checkUsername(username);
+      return response.data;
+    } catch (err) {
+      throw err;
+    }
+  }
+
+  async function sendVerificationCode(email) {
+    try {
+      const response = await authAPI.sendVerificationCode(email);
+      return response.data;
+    } catch (err) {
+      throw err;
+    }
+  }
+
+  async function verifyEmail(email, code) {
+    try {
+      const response = await authAPI.verifyEmail(email, code);
       return response.data;
     } catch (err) {
       throw err;
@@ -141,6 +173,9 @@ export const useAuthStore = defineStore("auth", () => {
     logout,
     register,
     checkEmail,
+    checkUsername,
+    sendVerificationCode,
+    verifyEmail,
     updateUser,
   };
 });

@@ -8,6 +8,9 @@ export const API_ENDPOINTS = {
     ME: "/auth/me",
     UPDATE_ME: "/auth/me",
     CHECK_EMAIL: "/auth/check-email",
+    CHECK_USERNAME: "/auth/check-username",
+    SEND_VERIFICATION_CODE: "/auth/send-verification-code",
+    VERIFY_EMAIL: "/auth/verify-email",
   },
 
   // Listing 엔드포인트
