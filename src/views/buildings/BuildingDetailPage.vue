@@ -3,6 +3,37 @@
     <div v-if="building" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
       <!-- Main Content -->
       <div class="lg:col-span-2 space-y-6">
+        <!-- Roadview -->
+        <div class="card overflow-hidden relative">
+          <!-- 로드뷰 영역 -->
+          <div
+            v-if="building.lat && building.lng"
+            id="building-detail-roadview"
+            class="w-full h-80 bg-gray-200"
+          ></div>
+          <!-- 플레이스홀더 -->
+          <div
+            v-else
+            class="w-full h-80 bg-gray-200 flex items-center justify-center"
+          >
+            <div class="text-gray-400">
+              <svg
+                class="w-24 h-24 mx-auto"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                />
+              </svg>
+            </div>
+          </div>
+        </div>
+
         <!-- Building Basic Info -->
         <div class="card p-6">
           <div class="flex items-start justify-between mb-4">
@@ -12,26 +43,6 @@
               </h1>
               <p class="text-gray-600 mb-6">{{ building.road_address }}</p>
             </div>
-            <button
-              v-if="building.lat && building.lng"
-              @click="showRoadview = true"
-              class="btn-secondary flex items-center gap-2 whitespace-nowrap"
-            >
-              <svg
-                class="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
-                />
-              </svg>
-              로드뷰 보기
-            </button>
           </div>
 
           <!-- Stats Grid -->
@@ -105,8 +116,11 @@
 
       <!-- Sidebar -->
       <div class="space-y-6">
-        <!-- Contact Card -->
-        <ContactCard />
+        <!-- Building Listings -->
+        <BuildingListings
+          v-if="building && building.id"
+          :building-id="building.id"
+        />
 
         <!-- Commerce Radar Chart -->
         <CommerceRadarChart
@@ -134,38 +148,27 @@
       </router-link>
     </div>
   </div>
-
-  <!-- 로드뷰 모달 -->
-  <RoadviewModal
-    v-if="building && building.lat && building.lng"
-    :is-open="showRoadview"
-    :lat="building.lat"
-    :lng="building.lng"
-    @close="showRoadview = false"
-  />
 </template>
 
 <script>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch, onUnmounted, nextTick } from "vue";
 import { useRoute } from "vue-router";
 import { useBuildingStore } from "@/stores/building";
 import { reviewAPI, buildingAPI } from "@/utils/api";
 import ReviewCard from "@/components/common/ReviewCard.vue";
 import NearbyCommerceInfo from "@/components/common/NearbyCommerceInfo.vue";
-import ContactCard from "@/components/common/ContactCard.vue";
+import BuildingListings from "@/components/buildings/BuildingListings.vue";
 import CommerceRadarChart from "@/components/common/CommerceRadarChart.vue";
 import CommerceAnalysis from "@/components/common/CommerceAnalysis.vue";
-import RoadviewModal from "@/components/common/RoadviewModal.vue";
 
 export default {
   name: "BuildingDetailPage",
   components: {
     ReviewCard,
     NearbyCommerceInfo,
-    ContactCard,
+    BuildingListings,
     CommerceRadarChart,
     CommerceAnalysis,
-    RoadviewModal,
   },
   setup() {
     const route = useRoute();
@@ -175,10 +178,106 @@ export default {
       buildingStore.getBuildingById(route.params.id)
     );
     const reviews = ref([]);
-    const showRoadview = ref(false);
+    let roadview = null;
+    let roadviewClient = null;
+
+    // 로드뷰 초기화
+    function loadKakaoMapSDK() {
+      if (
+        typeof window.kakao !== "undefined" &&
+        window.kakao.maps &&
+        window.kakao.maps.Roadview
+      ) {
+        return Promise.resolve();
+      }
+
+      const kakaoKey = import.meta.env.VITE_KAKAO_MAP_JS_KEY;
+      if (!kakaoKey) {
+        console.error("카카오맵 JavaScript 키가 설정되지 않았습니다.");
+        return Promise.reject("카카오맵 키 없음");
+      }
+
+      return new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${kakaoKey}&autoload=false&libraries=services`;
+        script.async = true;
+        script.onload = () => {
+          try {
+            window.kakao.maps.load(() => {
+              resolve();
+            });
+          } catch (error) {
+            console.error("카카오맵 SDK 초기화 실패:", error);
+            reject(error);
+          }
+        };
+        script.onerror = () => {
+          console.error("카카오맵 SDK 스크립트 로드 실패.");
+          reject("스크립트 로드 실패");
+        };
+        document.head.appendChild(script);
+      });
+    }
+
+    async function initRoadview() {
+      if (!building.value || !building.value.lat || !building.value.lng) {
+        return;
+      }
+
+      try {
+        await loadKakaoMapSDK();
+
+        if (
+          typeof window.kakao === "undefined" ||
+          !window.kakao.maps ||
+          !window.kakao.maps.Roadview
+        ) {
+          console.error("카카오맵 로드뷰 SDK가 로드되지 않았습니다.");
+          return;
+        }
+
+        const container = document.getElementById("building-detail-roadview");
+        if (!container) {
+          return;
+        }
+
+        // 기존 로드뷰 정리
+        if (roadview) {
+          roadview = null;
+        }
+        if (roadviewClient) {
+          roadviewClient = null;
+        }
+
+        // 로드뷰 생성
+        roadview = new window.kakao.maps.Roadview(container);
+        roadviewClient = new window.kakao.maps.RoadviewClient();
+
+        const position = new window.kakao.maps.LatLng(
+          building.value.lat,
+          building.value.lng
+        );
+
+        roadviewClient.getNearestPanoId(position, 50, function (panoId) {
+          if (panoId === null) {
+            console.warn("해당 위치의 로드뷰를 사용할 수 없습니다.");
+            return;
+          }
+          roadview.setPanoId(panoId, position);
+        });
+      } catch (error) {
+        console.error("로드뷰 초기화 실패:", error);
+      }
+    }
 
     onMounted(async () => {
+      console.log(
+        "BuildingDetailPage: 빌딩 정보 로드 시작, id:",
+        route.params.id
+      );
       await buildingStore.fetchBuildingById(route.params.id);
+      console.log("BuildingDetailPage: 빌딩 정보:", building.value);
+      console.log("BuildingDetailPage: building.id:", building.value?.id);
 
       // 건물 리뷰 가져오기
       try {
@@ -258,12 +357,34 @@ export default {
       } catch (err) {
         console.error("리뷰를 불러오는데 실패했습니다:", err);
       }
+
+      // 로드뷰 초기화
+      await nextTick();
+      initRoadview();
+    });
+
+    // 빌딩 정보 변경 시 로드뷰 업데이트
+    watch(
+      () => [building.value?.lat, building.value?.lng],
+      () => {
+        nextTick(() => {
+          initRoadview();
+        });
+      }
+    );
+
+    onUnmounted(() => {
+      if (roadview) {
+        roadview = null;
+      }
+      if (roadviewClient) {
+        roadviewClient = null;
+      }
     });
 
     return {
       building,
       reviews,
-      showRoadview,
     };
   },
 };
