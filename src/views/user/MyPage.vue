@@ -106,8 +106,9 @@
         <h2 class="text-xl font-bold text-gray-900 mb-6">설정</h2>
         <div class="space-y-4">
           <!-- 회원 정보 수정 -->
-          <button
-            class="w-full text-left p-4 rounded-lg hover:bg-gray-50 transition-colors"
+          <router-link
+            to="/my-page/edit"
+            class="w-full text-left p-4 rounded-lg hover:bg-gray-50 transition-colors block"
           >
             <div class="flex items-center justify-between">
               <div>
@@ -130,7 +131,7 @@
                 />
               </svg>
             </div>
-          </button>
+          </router-link>
 
           <!-- 로그아웃 -->
           <button
