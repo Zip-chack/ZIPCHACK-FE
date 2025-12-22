@@ -21,27 +21,11 @@
         <!-- 이미지 영역 -->
         <div class="relative w-full h-32 bg-gray-200 overflow-hidden">
           <img
-            v-if="listing.image || listing.imageUrl || listing.image_url"
-            :src="listing.image || listing.imageUrl || listing.image_url"
+            :src="listing.image || listing.imageUrl || listing.image_url || 'https://minyou-images.s3.ap-northeast-2.amazonaws.com/listings/%E1%84%80%E1%85%B5%E1%84%87%E1%85%A9%E1%86%AB%E1%84%8B%E1%85%B5%E1%84%86%E1%85%B5%E1%84%8C%E1%85%B5.png'"
             :alt="listing.title"
             class="w-full h-full object-cover"
             @error="handleImageError"
           />
-          <div v-else class="w-full h-full flex items-center justify-center">
-            <svg
-              class="w-12 h-12 text-gray-300"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-              />
-            </svg>
-          </div>
           <!-- 찜하기 버튼 -->
           <button
             @click.stop="toggleFavorite(listing.id)"

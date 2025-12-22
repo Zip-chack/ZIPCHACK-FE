@@ -268,6 +268,7 @@ export default {
 
     // 계산된 속성들
     const imageUrl = computed(() => {
+      const defaultImageUrl = "https://minyou-images.s3.ap-northeast-2.amazonaws.com/listings/%E1%84%80%E1%85%B5%E1%84%87%E1%85%A9%E1%86%AB%E1%84%8B%E1%85%B5%E1%84%86%E1%85%B5%E1%84%8C%E1%85%B5.png";
       const url =
         listingData.value.image ||
         listingData.value.imageUrl ||
@@ -282,7 +283,7 @@ export default {
         });
       }
 
-      return url;
+      return url || defaultImageUrl;
     });
 
     const title = computed(() => {
