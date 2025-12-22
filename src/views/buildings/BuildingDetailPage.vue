@@ -152,9 +152,9 @@
 
 <script>
 import { ref, computed, onMounted, watch, onUnmounted, nextTick } from "vue";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { useBuildingStore } from "@/stores/building";
-import { reviewAPI, buildingAPI } from "@/utils/api";
+import { reviewAPI, buildingAPI, kakaoMapAPI } from "@/utils/api";
 import ReviewCard from "@/components/common/ReviewCard.vue";
 import NearbyCommerceInfo from "@/components/common/NearbyCommerceInfo.vue";
 import BuildingListings from "@/components/buildings/BuildingListings.vue";
@@ -172,6 +172,7 @@ export default {
   },
   setup() {
     const route = useRoute();
+    const router = useRouter();
     const buildingStore = useBuildingStore();
 
     const building = computed(() =>
@@ -180,6 +181,33 @@ export default {
     const reviews = ref([]);
     let roadview = null;
     let roadviewClient = null;
+
+    // 빌딩을 찾거나 생성하는 함수
+    async function findOrCreateBuilding(buildingId) {
+      try {
+        // 빌딩 ID가 카카오맵 place ID 형식인지 확인 (숫자로만 구성)
+        const isKakaoPlaceId = /^\d+$/.test(String(buildingId));
+        
+        if (isKakaoPlaceId) {
+          // 카카오맵 API를 통해 빌딩 정보 검색
+          // place ID로 직접 조회는 불가능하므로, 주변 지역에서 검색
+          // 하지만 place ID만으로는 검색이 어려우므로, 빌딩 정보가 없으면 생성 불가
+          console.log("카카오맵 place ID로 빌딩 정보를 가져올 수 없습니다:", buildingId);
+          return null;
+        }
+
+        // 빌딩 검색 시도
+        const searchResponse = await buildingAPI.searchBuildings(String(buildingId));
+        if (searchResponse.data && searchResponse.data.length > 0) {
+          return searchResponse.data[0].id;
+        }
+
+        return null;
+      } catch (error) {
+        console.error("빌딩 찾기 실패:", error);
+        return null;
+      }
+    }
 
     // 로드뷰 초기화
     function loadKakaoMapSDK() {
@@ -276,18 +304,80 @@ export default {
         route.params.id
       );
       
-      // 쿼리 파라미터에서 건물 정보 가져오기 (건물이 DB에 없을 때 생성하기 위해)
-      const buildingInfo = route.query.name
-        ? {
-            name: route.query.name,
-            roadAddress: route.query.roadAddress,
-            lat: route.query.lat ? parseFloat(route.query.lat) : null,
-            lng: route.query.lng ? parseFloat(route.query.lng) : null,
-            builtYear: route.query.builtYear ? parseInt(route.query.builtYear) : null,
-          }
-        : null;
+      // 빌딩 정보 가져오기 시도
+      const result = await buildingStore.fetchBuildingById(route.params.id);
       
-      await buildingStore.fetchBuildingById(route.params.id, buildingInfo);
+      // 빌딩이 없으면 생성 시도
+      if (!result.success && !building.value) {
+        console.log("빌딩이 없어서 생성 시도:", route.params.id);
+        
+        // 빌딩 ID가 카카오맵 place ID인 경우 처리
+        const buildingId = route.params.id;
+        const isKakaoPlaceId = /^\d+$/.test(String(buildingId));
+        
+        if (isKakaoPlaceId) {
+          // 카카오맵 place ID로는 직접 조회가 불가능하므로,
+          // 빌딩 정보가 없으면 생성할 수 없음
+          // 대신 빌딩 정보를 query parameter로 전달받아서 생성
+          const buildingName = route.query.name;
+          const buildingAddress = route.query.address || route.query.roadAddress;
+          const buildingLat = route.query.lat;
+          const buildingLng = route.query.lng;
+          
+          console.log("빌딩 생성 시도 - query params:", {
+            name: buildingName,
+            address: buildingAddress,
+            lat: buildingLat,
+            lng: buildingLng,
+          });
+          
+          if (buildingName && buildingAddress && buildingLat && buildingLng) {
+            try {
+              const buildingData = {
+                name: String(buildingName),
+                roadAddress: String(buildingAddress),
+                lat: parseFloat(String(buildingLat)),
+                lng: parseFloat(String(buildingLng)),
+                builtYear: null,
+              };
+              
+              console.log("빌딩 생성 데이터:", buildingData);
+              
+              const createResponse = await buildingAPI.createBuilding(buildingData);
+              const newBuildingId = createResponse.data.id;
+              
+              console.log("빌딩 생성 성공, 새 ID:", newBuildingId);
+              
+              // 생성된 빌딩 ID로 다시 시도
+              await buildingStore.fetchBuildingById(newBuildingId);
+              router.replace(`/buildings/${newBuildingId}`);
+              return;
+            } catch (error) {
+              console.error("빌딩 생성 실패:", error);
+              console.error("에러 상세:", error.response?.data || error.message);
+            }
+          } else {
+            console.error("빌딩 정보가 부족하여 생성할 수 없습니다:", {
+              name: buildingName,
+              address: buildingAddress,
+              lat: buildingLat,
+              lng: buildingLng,
+            });
+          }
+        } else {
+          // 빌딩 검색 시도
+          const foundBuildingId = await findOrCreateBuilding(buildingId);
+          if (foundBuildingId) {
+            // 찾은 빌딩 ID로 다시 시도
+            await buildingStore.fetchBuildingById(foundBuildingId);
+            if (foundBuildingId !== buildingId) {
+              router.replace(`/buildings/${foundBuildingId}`);
+              return;
+            }
+          }
+        }
+      }
+      
       console.log("BuildingDetailPage: 빌딩 정보:", building.value);
       console.log("BuildingDetailPage: building.id:", building.value?.id);
 

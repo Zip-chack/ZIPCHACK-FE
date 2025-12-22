@@ -100,11 +100,10 @@
                 path: `/buildings/${selectedBuilding.id}`,
                 query: {
                   name: selectedBuilding.name,
-                  roadAddress: selectedBuilding.road_address || selectedBuilding.roadAddress,
+                  address: selectedBuilding.road_address,
                   lat: selectedBuilding.lat,
                   lng: selectedBuilding.lng,
-                  builtYear: selectedBuilding.built_year || selectedBuilding.builtYear
-                }
+                },
               }"
               class="btn-primary flex-1 text-center block py-2.5 font-semibold"
             >
