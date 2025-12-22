@@ -138,6 +138,11 @@ export default {
         }
       }
 
+      // 정렬 파라미터 추가
+      if (filters.value.sort) {
+        params.sort = filters.value.sort;
+      }
+
       await listingStore.fetchListings(params);
     };
 
@@ -156,33 +161,16 @@ export default {
         filters.value.search,
         filters.value.roomType,
         filters.value.priceRange,
+        filters.value.sort,
       ],
       () => {
         fetchFilteredListings();
       }
     );
 
-    // 클라이언트 사이드 정렬만 수행
+    // 서버에서 정렬된 결과를 그대로 사용
     const filteredListings = computed(() => {
-      let result = [...listingStore.listings];
-
-      switch (filters.value.sort) {
-        case "price_low":
-          result.sort((a, b) => a.monthly_rent - b.monthly_rent);
-          break;
-        case "price_high":
-          result.sort((a, b) => b.monthly_rent - a.monthly_rent);
-          break;
-        case "rating":
-          result.sort((a, b) => b.rating - a.rating);
-          break;
-        case "latest":
-        default:
-          // 최신순은 서버에서 이미 정렬되어 있을 것으로 가정
-          break;
-      }
-
-      return result;
+      return [...listingStore.listings];
     });
 
     function goToListing(id) {
