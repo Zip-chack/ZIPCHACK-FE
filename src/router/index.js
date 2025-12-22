@@ -102,6 +102,11 @@ const routes = [
     name: "MyReviews",
     component: () => import("@/views/user/MyReviewsPage.vue"),
   },
+  {
+    path: "/transactions",
+    name: "Transactions",
+    component: () => import("@/views/transactions/TransactionsPage.vue"),
+  },
 ];
 
 const router = createRouter({
