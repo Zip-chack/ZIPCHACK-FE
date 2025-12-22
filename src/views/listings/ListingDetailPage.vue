@@ -148,7 +148,7 @@ const startChat = async (id) => {
   // Takes id from emitted event
   const roomId = await chatStore.enterRoom(id); // Use the passed id
   if (roomId) {
-    router.push({ name: "ChatRoom", params: { roomId } });
+    router.push({ name: "MyChats", query: { room: roomId } });
   } else {
     // Error message already handled by chatStore.enterRoom
   }

@@ -3,7 +3,7 @@
     <!-- Chat List Section -->
     <div 
       class="flex flex-col transition-all duration-300 ease-in-out h-full"
-      :class="selectedRoomId ? 'w-1/2' : 'w-full'"
+      :class="selectedRoomId ? 'w-3/5' : 'w-full'"
     >
       <h1 class="text-2xl font-bold mb-4 flex-shrink-0">내 채팅 목록</h1>
       
@@ -54,7 +54,7 @@
     <!-- Chat Room Section (Sliding Panel) -->
     <div 
       class="transition-all duration-300 ease-in-out h-full overflow-hidden"
-      :class="selectedRoomId ? 'w-1/2 opacity-100' : 'w-0 opacity-0'"
+      :class="selectedRoomId ? 'w-2/5 opacity-100' : 'w-0 opacity-0'"
     >
       <div v-if="selectedRoomId" class="h-full border rounded-xl overflow-hidden shadow-lg bg-white">
         <ChatRoomPage :roomId="selectedRoomId" @room-completed="handleRoomCompleted" />
@@ -68,11 +68,12 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { chatAPI } from '@/utils/api'; 
 import ChatRoomPage from './ChatRoomPage.vue';
 
 const router = useRouter();
+const route = useRoute();
 const chatRooms = ref([]);
 const isLoading = ref(true);
 const selectedRoomId = ref(null);
@@ -81,6 +82,11 @@ onMounted(async () => {
   try {
     const response = await chatAPI.getMyChatRooms();
     chatRooms.value = response.data;
+    
+    // Check for room in query params
+    if (route.query.room) {
+      selectedRoomId.value = route.query.room;
+    }
   } catch (error) {
     console.error('Failed to fetch chat rooms:', error);
     alert('채팅 목록을 불러오는데 실패했습니다.');
