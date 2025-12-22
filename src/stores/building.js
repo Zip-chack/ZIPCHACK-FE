@@ -51,11 +51,22 @@ export const useBuildingStore = defineStore("building", () => {
   }
 
   // 건물 상세 정보 가져오기
-  async function fetchBuildingById(id) {
+  async function fetchBuildingById(id, buildingInfo = null) {
     isLoading.value = true;
     error.value = null;
     try {
-      const response = await buildingAPI.getBuildingById(id);
+      // 건물 정보가 제공된 경우 쿼리 파라미터로 전달
+      const params = buildingInfo
+        ? {
+            name: buildingInfo.name,
+            roadAddress: buildingInfo.roadAddress || buildingInfo.road_address,
+            lat: buildingInfo.lat,
+            lng: buildingInfo.lng,
+            builtYear: buildingInfo.builtYear || buildingInfo.built_year,
+          }
+        : {};
+      
+      const response = await buildingAPI.getBuildingById(id, params);
       const building = response.data;
       currentBuilding.value = {
         id: building.id,

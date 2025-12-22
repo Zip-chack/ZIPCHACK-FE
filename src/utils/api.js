@@ -168,7 +168,7 @@ export const buildingAPI = {
   getBuildings: (params) =>
     apiClient.get(API_ENDPOINTS.BUILDINGS.BASE, { params }),
 
-  getBuildingById: (id) => apiClient.get(API_ENDPOINTS.BUILDINGS.BY_ID(id)),
+  getBuildingById: (id, params) => apiClient.get(API_ENDPOINTS.BUILDINGS.BY_ID(id), { params }),
 
   searchBuildings: (query) =>
     apiClient.get(API_ENDPOINTS.BUILDINGS.SEARCH, { params: { q: query } }),

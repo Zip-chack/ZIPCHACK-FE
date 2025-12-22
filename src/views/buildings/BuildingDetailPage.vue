@@ -275,7 +275,19 @@ export default {
         "BuildingDetailPage: 빌딩 정보 로드 시작, id:",
         route.params.id
       );
-      await buildingStore.fetchBuildingById(route.params.id);
+      
+      // 쿼리 파라미터에서 건물 정보 가져오기 (건물이 DB에 없을 때 생성하기 위해)
+      const buildingInfo = route.query.name
+        ? {
+            name: route.query.name,
+            roadAddress: route.query.roadAddress,
+            lat: route.query.lat ? parseFloat(route.query.lat) : null,
+            lng: route.query.lng ? parseFloat(route.query.lng) : null,
+            builtYear: route.query.builtYear ? parseInt(route.query.builtYear) : null,
+          }
+        : null;
+      
+      await buildingStore.fetchBuildingById(route.params.id, buildingInfo);
       console.log("BuildingDetailPage: 빌딩 정보:", building.value);
       console.log("BuildingDetailPage: building.id:", building.value?.id);
 

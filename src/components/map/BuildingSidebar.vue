@@ -96,7 +96,16 @@
         <div class="flex-1 overflow-y-auto p-4">
           <div class="flex gap-2 mb-4">
             <router-link
-              :to="`/buildings/${selectedBuilding.id}`"
+              :to="{
+                path: `/buildings/${selectedBuilding.id}`,
+                query: {
+                  name: selectedBuilding.name,
+                  roadAddress: selectedBuilding.road_address || selectedBuilding.roadAddress,
+                  lat: selectedBuilding.lat,
+                  lng: selectedBuilding.lng,
+                  builtYear: selectedBuilding.built_year || selectedBuilding.builtYear
+                }
+              }"
               class="btn-primary flex-1 text-center block py-2.5 font-semibold"
             >
               상세보기
