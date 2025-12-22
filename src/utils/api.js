@@ -13,6 +13,7 @@ const apiClient = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
+  timeout: 180000, // 3분 타임아웃 (180초)
 });
 
 // 요청 인터셉터 - 토큰 추가

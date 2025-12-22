@@ -18,12 +18,21 @@
           {{ reportPreview }}
         </p>
       </div>
-      <button
-        @click="showReportModal = true"
-        class="btn-secondary w-full py-2 text-sm font-semibold"
-      >
-        자세히 보기
-      </button>
+      <div class="flex gap-2">
+        <button
+          @click="showReportModal = true"
+          class="btn-secondary flex-1 py-2 text-sm font-semibold"
+        >
+          자세히 보기
+        </button>
+        <button
+          @click="regenerateReport"
+          class="btn-primary flex-1 py-2 text-sm font-semibold"
+          :disabled="isGeneratingReport"
+        >
+          다시 만들기
+        </button>
+      </div>
     </div>
 
     <div v-else>
@@ -144,12 +153,26 @@ export default {
       }
     };
 
+    // 리포트 다시 생성
+    const regenerateReport = async () => {
+      // 기존 리포트 삭제
+      savedReport.value = "";
+      if (props.buildingId) {
+        localStorage.removeItem(getReportKey(props.buildingId));
+      }
+      showReportModal.value = false;
+      
+      // 새 리포트 생성
+      await generateReport();
+    };
+
     return {
       isGeneratingReport,
       savedReport,
       showReportModal,
       reportPreview,
       generateReport,
+      regenerateReport,
     };
   },
 };
