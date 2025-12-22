@@ -262,6 +262,15 @@ export const chatAPI = {
   deleteChatRoom: (roomId) => apiClient.delete(`/chat/rooms/${roomId}`),
 };
 
+// Real Estate Chat API
+export const realEstateChatAPI = {
+  chat: (message, conversationHistory = []) =>
+    apiClient.post(API_ENDPOINTS.REAL_ESTATE_CHAT.BASE, {
+      message,
+      conversation_history: conversationHistory,
+    }),
+};
+
 // Image API
 export const imageAPI = {
   uploadImage: (file, folder = "uploads") => {

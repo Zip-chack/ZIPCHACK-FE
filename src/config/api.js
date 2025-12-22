@@ -62,6 +62,11 @@ export const API_ENDPOINTS = {
     APARTMENT_RENT: "/public-data/apartment-rent",
   },
 
+  // Real Estate Chat 엔드포인트
+  REAL_ESTATE_CHAT: {
+    BASE: "/real-estate-chat",
+  },
+
   // Image API 엔드포인트
   IMAGES: {
     UPLOAD: "/images/upload",

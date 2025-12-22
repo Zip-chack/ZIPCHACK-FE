@@ -94,10 +94,10 @@
             </p>
           </div>
 
-          <!-- 실거래가 정보 → /transactions -->
+          <!-- 부동산 상식 챗봇 → 모달 열기 -->
           <div
             class="text-center p-6 cursor-pointer transition shadow hover:shadow-lg rounded-xl border hover:bg-primary-50"
-            @click="goTo('/transactions')"
+            @click="openChatModal"
           >
             <div
               class="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4"
@@ -112,15 +112,15 @@
                   stroke-linecap="round"
                   stroke-linejoin="round"
                   stroke-width="2"
-                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                  d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
                 />
               </svg>
             </div>
             <h3 class="text-xl font-semibold text-gray-900 mb-2">
-              실거래가 정보
+              부동산 상식 챗봇
             </h3>
             <p class="text-gray-600">
-              해당 건물의 과거 실거래가 정보를 확인하세요
+              부동산 거래, 전세/월세 등 궁금한 점을 AI에게 물어보세요
             </p>
           </div>
         </div>
@@ -198,6 +198,11 @@ export default {
       listingStore.toggleFavorite(id);
     }
 
+    function openChatModal() {
+      // 전역 이벤트를 통해 App.vue의 모달 열기
+      window.dispatchEvent(new CustomEvent("open-chat-modal"));
+    }
+
     return {
       searchQuery,
       recentListings,
@@ -205,6 +210,7 @@ export default {
       goTo,
       goToListing,
       toggleFavorite,
+      openChatModal,
     };
   },
 };

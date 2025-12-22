@@ -1,210 +1,307 @@
 <template>
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <div class="mb-8">
-      <h1 class="text-3xl font-bold text-gray-900 mb-4">
-        아파트 전월세 실거래가 조회
-      </h1>
-      <p class="text-gray-600">
-        국토교통부 공공데이터를 기반으로 실거래가 정보를 제공합니다.
-      </p>
-    </div>
+  <div class="min-h-screen bg-gray-50">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <!-- Header -->
+      <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">부동산 상식 챗봇</h1>
+        <p class="text-gray-600">
+          부동산 거래, 전세/월세, 주의사항 등에 대해 물어보세요
+        </p>
+      </div>
 
-    <!-- Search Form -->
-    <div class="bg-white rounded-xl shadow-sm p-6 mb-8 border border-gray-200">
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1"
-            >지역 선택 (서울시)</label
+      <!-- Chat Container -->
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col" style="height: calc(100vh - 250px);">
+        <!-- Messages Area -->
+        <div ref="messagesContainer" class="flex-1 overflow-y-auto p-6 space-y-4">
+          <!-- Welcome Message -->
+          <div v-if="messages.length === 0" class="text-center py-12">
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary-100 mb-4">
+              <svg class="w-8 h-8 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+              </svg>
+            </div>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">안녕하세요! 부동산 상담사입니다</h3>
+            <p class="text-gray-500 mb-6">부동산 관련 궁금한 점을 물어보세요</p>
+            
+            <!-- Quick Questions -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-2xl mx-auto">
+              <button
+                v-for="question in quickQuestions"
+                :key="question"
+                @click="sendQuickQuestion(question)"
+                class="text-left px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-lg text-sm text-gray-700 transition-colors"
+              >
+                {{ question }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Messages -->
+          <div
+            v-for="(message, index) in messages"
+            :key="index"
+            :class="[
+              'flex',
+              message.role === 'user' ? 'justify-end' : 'justify-start'
+            ]"
           >
-          <select
-            v-model="searchParams.lawdCd"
-            class="w-full rounded-lg border-gray-300 focus:border-primary-500 focus:ring-primary-500"
-          >
-            <option value="" disabled>지역을 선택하세요</option>
-            <option
-              v-for="district in seoulDistricts"
-              :key="district.code"
-              :value="district.code"
+            <div
+              :class="[
+                'max-w-3xl rounded-lg px-4 py-3',
+                message.role === 'user'
+                  ? 'bg-primary-500 text-white'
+                  : 'bg-gray-100 text-gray-900'
+              ]"
             >
-              {{ district.name }}
-            </option>
-          </select>
+              <div 
+                v-if="message.role === 'assistant'"
+                class="prose prose-sm max-w-none"
+                v-html="formatMarkdown(message.content)"
+              ></div>
+              <div v-else class="whitespace-pre-wrap">{{ message.content }}</div>
+              <div
+                :class="[
+                  'text-xs mt-1',
+                  message.role === 'user' ? 'text-primary-100' : 'text-gray-500'
+                ]"
+              >
+                {{ formatTime(message.timestamp) }}
+              </div>
+            </div>
+          </div>
+
+          <!-- Loading Indicator -->
+          <div v-if="isLoading" class="flex justify-start">
+            <div class="bg-gray-100 rounded-lg px-4 py-3">
+              <div class="flex items-center space-x-2">
+                <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+                <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.4s"></div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1"
-            >계약년월 (선택사항)</label
-          >
-          <input
-            v-model="searchParams.dealYmd"
-            type="month"
-            class="w-full rounded-lg border-gray-300 focus:border-primary-500 focus:ring-primary-500"
-          />
+        <!-- Input Area -->
+        <div class="border-t border-gray-200 p-4">
+          <form @submit.prevent="sendMessage" class="flex gap-3">
+            <input
+              v-model="inputMessage"
+              type="text"
+              placeholder="부동산 관련 질문을 입력하세요..."
+              class="flex-1 rounded-lg border-gray-300 focus:border-primary-500 focus:ring-primary-500"
+              :disabled="isLoading"
+            />
+            <button
+              type="submit"
+              :disabled="isLoading || !inputMessage.trim()"
+              class="btn-primary px-6 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <span v-if="isLoading">전송 중...</span>
+              <span v-else>전송</span>
+            </button>
+          </form>
         </div>
-
-        <button
-          @click="handleSearch"
-          :disabled="isLoading || !searchParams.lawdCd"
-          class="btn-primary h-10 w-full flex items-center justify-center"
-        >
-          <span v-if="isLoading">조회중...</span>
-          <span v-else>조회하기</span>
-        </button>
       </div>
-    </div>
-
-    <!-- Results Table -->
-    <div v-if="transactions.length > 0" class="bg-white shadow overflow-hidden sm:rounded-lg">
-      <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
-            <tr>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                아파트명
-              </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                주소
-              </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                전용면적
-              </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                계약일
-              </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                보증금 / 월세
-              </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                층
-              </th>
-            </tr>
-          </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
-            <tr v-for="(item, index) in transactions" :key="index" class="hover:bg-gray-50">
-              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                {{ item.apartmentName }}
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {{ item.roadAddress || item.jibunAddress }}
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {{ item.area }} m²
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {{ item.dealDate }}.{{ item.dealMonth }}.{{ item.dealDay }}
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
-                {{ formatMoney(item.deposit) }} <span v-if="item.monthlyRent && item.monthlyRent !== '0'">/ {{ formatMoney(item.monthlyRent) }}</span>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {{ item.floor }}층
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- Empty State -->
-    <div v-else-if="!isLoading && hasSearched" class="text-center py-16 bg-white rounded-xl shadow-sm border border-gray-200">
-      <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-      <h3 class="mt-2 text-sm font-medium text-gray-900">검색 결과가 없습니다</h3>
-      <p class="mt-1 text-sm text-gray-500">다른 조건으로 검색해 보세요.</p>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive } from "vue";
-import { publicDataAPI } from "@/utils/api";
+import { ref, nextTick, onMounted } from "vue";
+import { realEstateChatAPI } from "@/utils/api";
 
-const seoulDistricts = [
-  { code: "11680", name: "강남구" },
-  { code: "11650", name: "서초구" },
-  { code: "11710", name: "송파구" },
-  { code: "11440", name: "마포구" },
-  { code: "11560", name: "영등포구" },
-  { code: "11110", name: "종로구" },
-  { code: "11140", name: "중구" },
-  { code: "11170", name: "용산구" },
-  { code: "11200", name: "성동구" },
-  { code: "11215", name: "광진구" },
-  { code: "11230", name: "동대문구" },
-  { code: "11260", name: "중랑구" },
-  { code: "11290", name: "성북구" },
-  { code: "11305", name: "강북구" },
-  { code: "11320", name: "도봉구" },
-  { code: "11350", name: "노원구" },
-  { code: "11380", name: "은평구" },
-  { code: "11410", name: "서대문구" },
-  { code: "11470", name: "양천구" },
-  { code: "11500", name: "강서구" },
-  { code: "11530", name: "구로구" },
-  { code: "11545", name: "금천구" },
-  { code: "11590", name: "동작구" },
-  { code: "11620", name: "관악구" },
-  { code: "11740", name: "강동구" },
+const messages = ref([]);
+const inputMessage = ref("");
+const isLoading = ref(false);
+const messagesContainer = ref(null);
+
+const quickQuestions = [
+  "전세 계약 시 주의사항은?",
+  "월세와 전세의 차이점은?",
+  "중개수수료는 얼마인가요?",
+  "계약서 작성 시 체크리스트",
+  "보증금 반환 시 주의사항",
+  "원룸 구매 시 확인사항"
 ];
 
-const searchParams = reactive({
-  lawdCd: "",
-  dealYmd: "",
-});
+const sendQuickQuestion = (question) => {
+  inputMessage.value = question;
+  sendMessage();
+};
 
-const transactions = ref([]);
-const isLoading = ref(false);
-const hasSearched = ref(false);
+const sendMessage = async () => {
+  const message = inputMessage.value.trim();
+  if (!message || isLoading.value) return;
 
-async function handleSearch() {
-  if (!searchParams.lawdCd) return;
+  // 사용자 메시지 추가
+  const userMessage = {
+    role: "user",
+    content: message,
+    timestamp: new Date(),
+  };
+  messages.value.push(userMessage);
+  inputMessage.value = "";
+
+  // 대화 히스토리 구성
+  const conversationHistory = messages.value
+    .filter(m => m.role !== "system")
+    .map(m => ({
+      role: m.role,
+      content: m.content,
+    }));
 
   isLoading.value = true;
-  hasSearched.value = true;
-  transactions.value = [];
 
   try {
-    // YYYY-MM -> YYYYMM format
-    // Ensure we only send 6 digits (YYYYMM) and remove any non-numeric characters
-    let formattedDate = "";
-    if (searchParams.dealYmd) {
-      const cleanDate = String(searchParams.dealYmd).replace(/[^0-9]/g, "");
-      if (cleanDate.length >= 6) {
-        formattedDate = cleanDate.substring(0, 6);
-      }
-    }
+    const response = await realEstateChatAPI.chat(message, conversationHistory);
     
-    // Explicitly ensure both parameters are strings
-    const finalLawdCd = String(searchParams.lawdCd);
-    const finalDealYmd = String(formattedDate);
-
-    console.log("Searching with:", finalLawdCd, finalDealYmd);
-
-    const response = await publicDataAPI.getApartmentRentData(
-      finalLawdCd,
-      finalDealYmd
-    );
-    transactions.value = response.data || [];
+    // 챗봇 응답 추가
+    const botMessage = {
+      role: "assistant",
+      content: response.data.response,
+      timestamp: new Date(),
+    };
+    messages.value.push(botMessage);
   } catch (error) {
-    console.error("실거래가 조회 실패:", error);
-    alert("데이터를 불러오는데 실패했습니다. 잠시 후 다시 시도해 주세요.");
+    console.error("챗봇 요청 실패:", error);
+    const errorMessage = {
+      role: "assistant",
+      content: "죄송합니다. 답변을 생성하는 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.",
+      timestamp: new Date(),
+    };
+    messages.value.push(errorMessage);
   } finally {
     isLoading.value = false;
+    // 스크롤을 맨 아래로
+    await nextTick();
+    scrollToBottom();
   }
-}
+};
 
-function formatMoney(value) {
-  if (!value) return "0";
-  // 공공데이터 API는 '10,000' 형태의 문자열로 줄 수 있음
-  const num = parseInt(value.toString().replace(/,/g, ""));
-  if (isNaN(num)) return value;
-  
-  if (num >= 10000) {
-    const uk = Math.floor(num / 10000);
-    const remainder = num % 10000;
-    return `${uk}억 ${remainder > 0 ? remainder.toLocaleString() : ""}만원`;
+const scrollToBottom = () => {
+  if (messagesContainer.value) {
+    messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
   }
-  return `${num.toLocaleString()}만원`;
-}
+};
+
+const formatTime = (date) => {
+  if (!date) return "";
+  const d = new Date(date);
+  return d.toLocaleTimeString("ko-KR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+const formatMarkdown = (text) => {
+  if (!text) return "";
+  
+  // 인라인 마크다운 처리 함수 (볼드, 이탤릭 등)
+  const processInlineMarkdown = (line) => {
+    let processed = line;
+    // 볼드 처리 (**텍스트** 또는 __텍스트__)
+    processed = processed.replace(/\*\*([^*]+)\*\*/g, '<strong class="font-semibold">$1</strong>');
+    processed = processed.replace(/__([^_]+)__/g, '<strong class="font-semibold">$1</strong>');
+    // 이탤릭 처리 (*텍스트* 또는 _텍스트_)
+    processed = processed.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+    processed = processed.replace(/_([^_]+)_/g, '<em>$1</em>');
+    // 코드 인라인 처리 (`코드`)
+    processed = processed.replace(/`([^`]+)`/g, '<code class="bg-gray-200 px-1 py-0.5 rounded text-sm font-mono">$1</code>');
+    return processed;
+  };
+  
+  // 줄 단위로 분리
+  const lines = text.split("\n");
+  let formatted = "";
+  let inList = false;
+  let listType = null; // 'ul' or 'ol'
+  
+  lines.forEach((line) => {
+    const trimmed = line.trim();
+    
+    // 헤더 처리
+    if (trimmed.startsWith("### ")) {
+      if (inList) {
+        formatted += listType === 'ul' ? "</ul>" : "</ol>";
+        inList = false;
+        listType = null;
+      }
+      const content = processInlineMarkdown(trimmed.substring(4));
+      formatted += `<h3 class="text-base font-semibold text-gray-900 mb-2 mt-3">${content}</h3>`;
+    } else if (trimmed.startsWith("## ")) {
+      if (inList) {
+        formatted += listType === 'ul' ? "</ul>" : "</ol>";
+        inList = false;
+        listType = null;
+      }
+      const content = processInlineMarkdown(trimmed.substring(3));
+      formatted += `<h2 class="text-lg font-semibold text-gray-900 mb-2 mt-3">${content}</h2>`;
+    } else if (trimmed.startsWith("# ")) {
+      if (inList) {
+        formatted += listType === 'ul' ? "</ul>" : "</ol>";
+        inList = false;
+        listType = null;
+      }
+      const content = processInlineMarkdown(trimmed.substring(2));
+      formatted += `<h1 class="text-xl font-semibold text-gray-900 mb-2 mt-3">${content}</h1>`;
+    }
+    // 리스트 처리
+    else if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
+      if (!inList || listType !== 'ul') {
+        if (inList && listType === 'ol') {
+          formatted += "</ol>";
+        }
+        formatted += '<ul class="list-disc ml-5 mb-2 space-y-1">';
+        inList = true;
+        listType = 'ul';
+      }
+      const content = processInlineMarkdown(trimmed.substring(2));
+      formatted += `<li>${content}</li>`;
+    }
+    // 번호 리스트 처리
+    else if (/^\d+\.\s/.test(trimmed)) {
+      if (!inList || listType !== 'ol') {
+        if (inList && listType === 'ul') {
+          formatted += "</ul>";
+        }
+        formatted += '<ol class="list-decimal ml-5 mb-2 space-y-1">';
+        inList = true;
+        listType = 'ol';
+      }
+      const content = processInlineMarkdown(trimmed.replace(/^\d+\.\s/, ""));
+      formatted += `<li>${content}</li>`;
+    }
+    // 빈 줄 처리
+    else if (trimmed === "") {
+      if (inList) {
+        formatted += listType === 'ul' ? "</ul>" : "</ol>";
+        inList = false;
+        listType = null;
+      }
+      formatted += "<br>";
+    }
+    // 일반 텍스트 처리
+    else {
+      if (inList) {
+        formatted += listType === 'ul' ? "</ul>" : "</ol>";
+        inList = false;
+        listType = null;
+      }
+      const content = processInlineMarkdown(trimmed);
+      formatted += `<p class="mb-2 leading-relaxed">${content}</p>`;
+    }
+  });
+  
+  // 마지막에 리스트가 열려있으면 닫기
+  if (inList) {
+    formatted += listType === 'ul' ? "</ul>" : "</ol>";
+  }
+  
+  return formatted;
+};
+
+onMounted(() => {
+  scrollToBottom();
+});
 </script>
