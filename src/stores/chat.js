@@ -89,7 +89,7 @@ export const useChatStore = defineStore("chat", {
         webSocketFactory: () =>
           new SockJS(
             import.meta.env.VITE_WEBSOCKET_URL ||
-              "http://localhost:8080/ws/chat"
+              `${import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://43.203.224.10:8081'}/ws/chat`
           ),
         connectHeaders: { Authorization: `Bearer ${token}` },
         reconnectDelay: 5000,

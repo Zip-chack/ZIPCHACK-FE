@@ -83,4 +83,4 @@ export const API_ENDPOINTS = {
 
 // API 기본 URL 설정 (환경변수에서 가져오거나 기본값 사용)
 export const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api";
+  import.meta.env.VITE_API_BASE_URL || "http://43.203.224.10:8081/api";
