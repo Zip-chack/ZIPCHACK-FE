@@ -33,6 +33,12 @@
               </div>
               <div class="flex flex-col items-end gap-2 flex-shrink-0">
                 <span 
+                  v-if="room.unreadCount > 0" 
+                  class="bg-red-500 text-white text-xs px-2 py-1 rounded-full font-bold"
+                >
+                  {{ room.unreadCount }}
+                </span>
+                <span 
                   class="text-xs px-2 py-1 rounded-full font-medium"
                   :class="statusBadgeClass(room.status)"
                 >
@@ -97,6 +103,10 @@ onMounted(async () => {
 
 function selectRoom(roomId) {
   selectedRoomId.value = roomId;
+  const room = chatRooms.value.find(r => r.roomId === roomId);
+  if (room) {
+    room.unreadCount = 0;
+  }
 }
 
 function handleRoomCompleted(roomId) {
