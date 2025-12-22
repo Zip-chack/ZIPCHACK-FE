@@ -83,6 +83,15 @@ export const useListingStore = defineStore("listing", () => {
       listings.value.push(response.data);
       return { success: true, data: response.data };
     } catch (err) {
+      // 401 에러 (인증 실패) 처리
+      if (err.response?.status === 401) {
+        const errorMessage = err.response?.data?.error || "로그인이 필요합니다.";
+        alert(errorMessage);
+        router.push("/login");
+        error.value = errorMessage;
+        return { success: false, error: errorMessage };
+      }
+      
       error.value =
         err.response?.data?.error ||
         err.response?.data?.message ||
@@ -198,6 +207,15 @@ export const useListingStore = defineStore("listing", () => {
       }));
       return { success: true };
     } catch (err) {
+      // 401 에러 (인증 실패) 처리
+      if (err.response?.status === 401) {
+        const errorMessage = err.response?.data?.error || "로그인이 필요합니다.";
+        alert(errorMessage);
+        router.push("/login");
+        error.value = errorMessage;
+        return { success: false, error: errorMessage };
+      }
+      
       error.value =
         err.response?.data?.message || "찜 목록을 불러오는데 실패했습니다.";
       return { success: false, error: error.value };

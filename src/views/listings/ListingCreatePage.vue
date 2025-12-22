@@ -557,6 +557,15 @@ export default {
       } catch (err) {
         console.error("매물 등록 에러:", err);
         console.error("에러 상세:", err.response?.data);
+        
+        // 401 에러 (인증 실패) 처리
+        if (err.response?.status === 401) {
+          const errorMessage = err.response?.data?.error || "로그인이 필요합니다.";
+          alert(errorMessage);
+          router.push("/login");
+          return;
+        }
+        
         const errorMessage =
           err.response?.data?.error ||
           err.response?.data?.message ||
