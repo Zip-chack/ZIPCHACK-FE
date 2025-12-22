@@ -236,13 +236,20 @@ export const kakaoMapAPI = {
 
 // Public Data API
 export const publicDataAPI = {
-  getApartmentRentData: (lawdCd, dealYmd) =>
-    apiClient.get(API_ENDPOINTS.PUBLIC_DATA.APARTMENT_RENT, {
+  getApartmentRentData: (lawdCd, dealYmd) => {
+    // dealYmd 파라미터 강력 정제: 모든 비숫자 제거 후 정확히 6자리 유지
+    let cleanDealYmd = "";
+    if (dealYmd) {
+      cleanDealYmd = String(dealYmd).replace(/[^0-9]/g, "").substring(0, 6);
+    }
+
+    return apiClient.get(API_ENDPOINTS.PUBLIC_DATA.APARTMENT_RENT, {
       params: {
         lawdCd,
-        ...(dealYmd && { dealYmd }),
+        ...(cleanDealYmd && { dealYmd: cleanDealYmd }),
       },
-    }),
+    });
+  },
 };
 
 // Chat API
