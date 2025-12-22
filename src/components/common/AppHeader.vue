@@ -50,7 +50,7 @@
             >
               {{ authStore.user?.nickname }}님
             </router-link>
-            <button @click="authStore.logout" class="btn-secondary">
+            <button @click="handleLogout" class="btn-secondary">
               로그아웃
             </button>
           </template>
@@ -128,7 +128,7 @@
                   {{ authStore.user?.nickname }}님, 환영합니다.
                 </router-link>
                 <button
-                  @click="authStore.logout"
+                  @click="handleLogout"
                   class="btn-secondary w-full text-center"
                 >
                   로그아웃
@@ -158,21 +158,31 @@
 
 <script>
 import { ref, computed } from "vue";
+import { useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
 
 export default {
   name: "AppHeader",
   setup() {
+    const router = useRouter();
     const authStore = useAuthStore();
     const isMobileMenuOpen = ref(false);
 
     // This computed property will help simplify the mobile menu template
     const user = computed(() => authStore.user);
 
+    const handleLogout = async () => {
+      await authStore.logout();
+      router.push("/").then(() => {
+        window.location.reload();
+      });
+    };
+
     return {
       authStore,
       isMobileMenuOpen,
       user,
+      handleLogout,
     };
   },
 };
