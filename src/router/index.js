@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from "vue-router";
+import { useAuthStore } from "@/stores/auth";
 
 const routes = [
   {
@@ -15,11 +16,13 @@ const routes = [
     path: "/listings/create",
     name: "ListingCreate",
     component: () => import("@/views/listings/ListingCreatePage.vue"),
+    meta: { requiresAuth: true },
   },
   {
     path: "/listings/:id/edit",
     name: "ListingEdit",
     component: () => import("@/views/listings/ListingCreatePage.vue"),
+    meta: { requiresAuth: true },
   },
   {
     path: "/listings/:id",
@@ -56,6 +59,7 @@ const routes = [
     path: "/favorites",
     name: "Favorites",
     component: () => import("@/views/listings/FavoriteListPage.vue"),
+    meta: { requiresAuth: true },
   },
   {
     path: "/login",
@@ -120,6 +124,29 @@ const router = createRouter({
     // 그 외의 경우 항상 최상단으로 스크롤
     return { top: 0, behavior: "smooth" };
   },
+});
+
+// 네비게이션 가드: 인증이 필요한 페이지 접근 제어
+router.beforeEach(async (to, from, next) => {
+  const authStore = useAuthStore();
+  
+  // 인증이 필요한 페이지인지 확인
+  if (to.matched.some((record) => record.meta.requiresAuth)) {
+    // 사용자 정보가 없으면 초기화 시도
+    if (!authStore.user) {
+      await authStore.init();
+    }
+    
+    // 로그인 여부 확인
+    const token = localStorage.getItem("token");
+    if (!token || !authStore.isLoggedIn) {
+      alert("로그인이 필요합니다.");
+      next({ name: "Login", query: { redirect: to.fullPath } });
+      return;
+    }
+  }
+  
+  next();
 });
 
 export default router;
