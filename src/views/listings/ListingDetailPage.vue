@@ -3,17 +3,6 @@
     <div v-if="listing" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
       <!-- Main Content -->
       <div class="lg:col-span-2 space-y-6">
-        <!-- Owner Actions -->
-        <div v-if="isOwner" class="flex justify-end gap-3 mb-4">
-          <router-link
-            :to="`/listings/${listing.id}/edit`"
-            class="btn-secondary text-sm"
-          >
-            수정
-          </router-link>
-          <button @click="handleDelete" class="btn-danger text-sm">삭제</button>
-        </div>
-
         <!-- Basic Info Component -->
         <ListingBasicInfo
           :listing="listing"
@@ -66,6 +55,7 @@
           :isOwner="isOwner"
           :status="listing.status"
           @start-chat="startChat"
+          @delete="handleDelete"
         />
 
         <!-- Commerce Radar Chart -->

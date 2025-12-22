@@ -152,6 +152,9 @@ export const listingAPI = {
   updateListing: (id, listingData) =>
     apiClient.put(API_ENDPOINTS.LISTINGS.BY_ID(id), listingData),
 
+  updateListingStatus: (id, status) =>
+    apiClient.patch(`${API_ENDPOINTS.LISTINGS.BY_ID(id)}/status`, { status }),
+
   deleteListing: (id) => apiClient.delete(API_ENDPOINTS.LISTINGS.BY_ID(id)),
 
   toggleFavorite: (id) => apiClient.post(API_ENDPOINTS.LISTINGS.FAVORITE(id)),
