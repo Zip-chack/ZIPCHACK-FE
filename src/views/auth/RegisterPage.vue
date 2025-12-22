@@ -379,7 +379,13 @@ export default {
         ) {
           emailError.value = "이미 사용 중인 이메일입니다.";
         } else {
-          emailError.value = errorMessage;
+          // 개발 모드에서는 이메일 전송 실패를 허용하고 콘솔에서 확인하도록 안내
+          emailError.value =
+            errorMessage + " (개발 모드에서는 서버 콘솔을 확인하세요)";
+          // 에러가 발생해도 인증 코드는 저장되어 있을 수 있으므로, 사용자에게 알림
+          console.warn(
+            "이메일 전송 실패 - 개발 모드에서는 서버 콘솔에서 인증 코드를 확인하세요."
+          );
         }
         codeSent.value = false;
       } finally {

@@ -76,16 +76,6 @@
               <div class="text-3xl font-bold text-primary-500">
                 {{ summary?.unreadMessageCount || 0 }}
               </div>
-              <span
-                v-if="(summary?.unreadMessageCount || 0) > 0"
-                class="absolute -top-2 -right-2 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold"
-              >
-                {{
-                  summary?.unreadMessageCount > 99
-                    ? "99+"
-                    : summary?.unreadMessageCount
-                }}
-              </span>
             </div>
           </div>
         </router-link>
@@ -166,6 +156,34 @@
               </svg>
             </div>
           </button>
+
+          <!-- 회원 탈퇴 -->
+          <button
+            @click="handleDeleteAccount"
+            class="w-full text-left p-4 rounded-lg hover:bg-gray-50 transition-colors text-red-600 border-t border-gray-200 mt-4 pt-4"
+          >
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="font-medium">회원 탈퇴</h3>
+                <p class="text-sm text-gray-600 mt-1">
+                  계정을 영구적으로 삭제합니다
+                </p>
+              </div>
+              <svg
+                class="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
+            </div>
+          </button>
         </div>
       </div>
     </div>
@@ -221,6 +239,27 @@ export default {
       }
     };
 
+    const handleDeleteAccount = async () => {
+      const confirmMessage =
+        "정말 회원 탈퇴를 하시겠습니까?\n\n" +
+        "회원 탈퇴 시 모든 데이터가 영구적으로 삭제되며 복구할 수 없습니다.\n" +
+        "탈퇴를 원하시면 '탈퇴'를 입력해주세요.";
+
+      const userInput = prompt(confirmMessage);
+
+      if (userInput === "탈퇴") {
+        const result = await authStore.deleteAccount();
+        if (result.success) {
+          alert("회원 탈퇴가 완료되었습니다.");
+          router.push("/");
+        } else {
+          alert(result.error || "회원 탈퇴에 실패했습니다.");
+        }
+      } else if (userInput !== null) {
+        alert("'탈퇴'를 정확히 입력해주세요.");
+      }
+    };
+
     onMounted(() => {
       loadMyPageData();
     });
@@ -231,6 +270,7 @@ export default {
       summary,
       isLoading,
       handleLogout,
+      handleDeleteAccount,
     };
   },
 };

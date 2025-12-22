@@ -11,12 +11,12 @@
       <form @submit.prevent="handleLogin" class="card p-8 space-y-6">
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2"
-            >이메일</label
+            >이메일 또는 아이디</label
           >
           <input
             v-model="email"
-            type="email"
-            placeholder="이메일 주소"
+            type="text"
+            placeholder="이메일 또는 아이디"
             class="input"
             required
           />
@@ -36,6 +36,21 @@
         </div>
 
         <button type="submit" class="btn-primary w-full">로그인</button>
+
+        <div class="flex justify-between text-sm">
+          <router-link
+            to="/find-username"
+            class="text-primary-500 hover:text-primary-600 font-medium"
+          >
+            아이디 찾기
+          </router-link>
+          <router-link
+            to="/find-password"
+            class="text-primary-500 hover:text-primary-600 font-medium"
+          >
+            비밀번호 찾기
+          </router-link>
+        </div>
 
         <p class="text-center text-sm text-gray-600">
           계정이 없으신가요?

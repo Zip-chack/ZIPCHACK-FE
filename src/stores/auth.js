@@ -162,6 +162,27 @@ export const useAuthStore = defineStore("auth", () => {
     }
   }
 
+  async function deleteAccount() {
+    isLoading.value = true;
+    error.value = null;
+    try {
+      await authAPI.deleteAccount();
+      // 회원 탈퇴 성공 시 로그아웃 처리
+      user.value = null;
+      localStorage.removeItem("token");
+      return { success: true };
+    } catch (err) {
+      const errorMessage =
+        err.response?.data?.error ||
+        err.response?.data?.message ||
+        "회원 탈퇴에 실패했습니다.";
+      error.value = errorMessage;
+      return { success: false, error: errorMessage };
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
   return {
     user,
     isLoading,
@@ -177,5 +198,6 @@ export const useAuthStore = defineStore("auth", () => {
     sendVerificationCode,
     verifyEmail,
     updateUser,
+    deleteAccount,
   };
 });

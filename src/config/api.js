@@ -7,10 +7,15 @@ export const API_ENDPOINTS = {
     LOGOUT: "/auth/logout",
     ME: "/auth/me",
     UPDATE_ME: "/auth/me",
+    DELETE_ME: "/auth/me",
     CHECK_EMAIL: "/auth/check-email",
     CHECK_USERNAME: "/auth/check-username",
     SEND_VERIFICATION_CODE: "/auth/send-verification-code",
     VERIFY_EMAIL: "/auth/verify-email",
+    FIND_USERNAME: "/auth/find-username",
+    FIND_PASSWORD: "/auth/find-password",
+    VERIFY_PASSWORD_RESET_CODE: "/auth/verify-password-reset-code",
+    RESET_PASSWORD: "/auth/reset-password",
   },
 
   // Listing 엔드포인트

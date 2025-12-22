@@ -98,6 +98,8 @@ export const authAPI = {
   updateUser: (userData) =>
     apiClient.put(API_ENDPOINTS.AUTH.UPDATE_ME, userData),
 
+  deleteAccount: () => apiClient.delete(API_ENDPOINTS.AUTH.DELETE_ME),
+
   checkEmail: (email) =>
     apiClient.get(API_ENDPOINTS.AUTH.CHECK_EMAIL, { params: { email } }),
 
@@ -110,8 +112,24 @@ export const authAPI = {
   verifyEmail: (email, code) =>
     apiClient.post(API_ENDPOINTS.AUTH.VERIFY_EMAIL, { email, code }),
 
-  checkEmail: (email) =>
-    apiClient.get(API_ENDPOINTS.AUTH.CHECK_EMAIL, { params: { email } }),
+  findUsername: (email, name) =>
+    apiClient.post(API_ENDPOINTS.AUTH.FIND_USERNAME, { email, name }),
+
+  findPassword: (email) =>
+    apiClient.post(API_ENDPOINTS.AUTH.FIND_PASSWORD, { email }),
+
+  verifyPasswordResetCode: (email, code) =>
+    apiClient.post(API_ENDPOINTS.AUTH.VERIFY_PASSWORD_RESET_CODE, {
+      email,
+      code,
+    }),
+
+  resetPassword: (email, code, newPassword) =>
+    apiClient.post(API_ENDPOINTS.AUTH.RESET_PASSWORD, {
+      email,
+      code,
+      newPassword,
+    }),
 };
 
 // User API
