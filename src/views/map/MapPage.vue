@@ -60,7 +60,7 @@ import { ref, computed, onMounted, onUnmounted, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useBuildingStore } from "@/stores/building";
 import { useListingStore } from "@/stores/listing";
-import { kakaoMapAPI, publicDataAPI, buildingAPI } from "@/utils/api";
+import { kakaoMapAPI, buildingAPI } from "@/utils/api";
 import BuildingSidebar from "@/components/map/BuildingSidebar.vue";
 
 export default {
@@ -82,11 +82,8 @@ export default {
     const isLoadingListings = ref(false);
     const mapError = ref(null);
     const isLoadingBuildings = ref(false);
-    const isLoadingRentData = ref(false);
-    const lawdCd = ref("");
     let map = null;
     let markers = [];
-    let rentMarkers = []; // 실거래가 마커
     let boundsCheckTimer = null;
     let currentInfoWindow = null; // 현재 열린 인포윈도우
     let currentMarker = null; // 현재 선택된 마커
@@ -702,144 +699,10 @@ export default {
       }
     }
 
-    async function loadApartmentRentData() {
-      if (!lawdCd.value || !map) {
-        alert("법정동코드를 입력해주세요.");
-        return;
-      }
-
-      try {
-        isLoadingRentData.value = true;
-
-        // 기존 실거래가 마커 제거
-        rentMarkers.forEach((marker) => marker.setMap(null));
-        rentMarkers = [];
-
-        // 실거래가 데이터 조회
-        const response = await publicDataAPI.getApartmentRentData(lawdCd.value);
-        const rentData = response.data;
-
-        if (!rentData || rentData.length === 0) {
-          alert("해당 지역의 실거래가 데이터가 없습니다.");
-          return;
-        }
-
-        // 실거래가 마커 표시
-        rentData.forEach((rent) => {
-          if (rent.lat && rent.lng) {
-            const markerPosition = new window.kakao.maps.LatLng(
-              rent.lat,
-              rent.lng
-            );
-
-            // 실거래가 전용 마커 (파란색)
-            const markerImageSrc =
-              "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/marker_blue.png";
-            const markerImageSize = new window.kakao.maps.Size(24, 35);
-            const markerImage = new window.kakao.maps.MarkerImage(
-              markerImageSrc,
-              markerImageSize
-            );
-
-            const marker = new window.kakao.maps.Marker({
-              position: markerPosition,
-              image: markerImage,
-              map: map,
-            });
-
-            // 인포윈도우 생성
-            const deposit = rent.deposit
-              ? parseInt(rent.deposit).toLocaleString()
-              : "-";
-            const monthlyRent = rent.monthlyRent
-              ? parseInt(rent.monthlyRent).toLocaleString()
-              : "-";
-            const area = rent.area ? parseFloat(rent.area).toFixed(2) : "-";
-
-            const content = `
-              <div style="padding:8px;font-size:12px;min-width:150px;">
-                <strong>${rent.apartmentName || "아파트"}</strong><br/>
-                <span>${rent.roadAddress || rent.jibunAddress || ""}</span><br/>
-                <span>면적: ${area}㎡</span><br/>
-                <span>보증금: ${deposit}만원</span><br/>
-                <span>월세: ${monthlyRent}만원</span><br/>
-                <span>거래일: ${rent.dealDate || ""}.${rent.dealMonth || ""}.${
-              rent.dealDay || ""
-            }</span>
-              </div>
-            `;
-
-            const infowindow = new window.kakao.maps.InfoWindow({
-              content: content,
-            });
-
-            window.kakao.maps.event.addListener(marker, "click", async () => {
-              infowindow.open(map, marker);
-              // Building 찾기 또는 생성 후 상세 페이지로 이동
-              await handleRentDataClick(rent);
-            });
-
-            rentMarkers.push(marker);
-          }
-        });
-
-        alert(`${rentData.length}개의 실거래가 데이터를 표시했습니다.`);
-      } catch (error) {
-        console.error("실거래가 조회 실패:", error);
-        alert(
-          "실거래가 데이터를 불러오는데 실패했습니다: " +
-            (error.response?.data?.error || error.message)
-        );
-      } finally {
-        isLoadingRentData.value = false;
-      }
-    }
-
-    // 실거래가 데이터 클릭 시 Building 찾기 또는 생성
-    async function handleRentDataClick(rent) {
-      try {
-        const buildingName = rent.apartmentName || "아파트";
-        const address = rent.roadAddress || rent.jibunAddress || "";
-
-        // Building 검색
-        const searchQuery = `${buildingName} ${address}`;
-        const searchResponse = await buildingAPI.searchBuildings(searchQuery);
-
-        let buildingId = null;
-
-        // 검색 결과가 있으면 첫 번째 결과 사용
-        if (searchResponse.data && searchResponse.data.length > 0) {
-          buildingId = searchResponse.data[0].id;
-        } else {
-          // Building이 없으면 생성
-          const buildingData = {
-            name: buildingName,
-            roadAddress: address,
-            lat: rent.lat,
-            lng: rent.lng,
-            builtYear: rent.buildYear ? parseInt(rent.buildYear) : null,
-          };
-
-          const createResponse = await buildingAPI.createBuilding(buildingData);
-          buildingId = createResponse.data.id;
-        }
-
-        // Building 상세 페이지로 이동
-        if (buildingId) {
-          router.push(`/buildings/${buildingId}`);
-        }
-      } catch (error) {
-        console.error("Building 찾기/생성 실패:", error);
-        alert("건물 정보를 불러오는데 실패했습니다.");
-      }
-    }
-
     onUnmounted(() => {
       // 마커 제거
       markers.forEach((marker) => marker.setMap(null));
-      rentMarkers.forEach((marker) => marker.setMap(null));
       markers = [];
-      rentMarkers = [];
     });
 
     return {
@@ -857,9 +720,6 @@ export default {
       selectBuilding,
       goToListing,
       toggleFavorite,
-      lawdCd,
-      isLoadingRentData,
-      loadApartmentRentData,
       mapError,
     };
   },
