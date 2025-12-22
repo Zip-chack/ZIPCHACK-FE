@@ -14,7 +14,7 @@
     <div v-else-if="savedReport">
       <!-- 리포트 미리보기 -->
       <div class="mb-4">
-        <p class="text-gray-700 text-sm leading-relaxed line-clamp-3">
+        <p class="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">
           {{ reportPreview }}
         </p>
       </div>
@@ -82,7 +82,7 @@ export default {
       return `commerce_report_${buildingId}`;
     };
 
-    // 리포트 미리보기 (100자)
+    // 리포트 미리보기 (500자)
     const reportPreview = computed(() => {
       if (!savedReport.value) return "";
       // 마크다운 형식의 텍스트에서 HTML 태그나 마크다운 문법 제거
@@ -94,10 +94,10 @@ export default {
         .replace(/\*([^*]+)\*/g, "$1") // 이탤릭 제거
         .trim();
 
-      // 줄바꿈을 공백으로 변환
-      text = text.replace(/\n+/g, " ");
+      // 줄바꿈은 유지하되 연속된 줄바꿈은 하나로
+      text = text.replace(/\n{3,}/g, "\n\n");
 
-      return text.length > 100 ? text.substring(0, 100) + "..." : text;
+      return text.length > 500 ? text.substring(0, 500) + "..." : text;
     });
 
     // 건물이 변경될 때 저장된 리포트 불러오기
