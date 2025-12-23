@@ -61,9 +61,6 @@
           </div>
           <h1 class="text-2xl font-bold text-gray-900">{{ title }}</h1>
           <p v-if="address" class="text-gray-600 mt-1">{{ address }}</p>
-          <p v-if="ownerId" class="text-gray-600 mt-1">
-            등록자 ID: {{ ownerId }}
-          </p>
         </div>
         <div class="flex items-center gap-2 ml-4">
           <button
