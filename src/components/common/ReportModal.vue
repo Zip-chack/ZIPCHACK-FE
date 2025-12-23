@@ -36,9 +36,9 @@
 
           <!-- 콘텐츠 -->
           <div class="flex-1 overflow-y-auto p-6">
-            <div class="prose prose-sm max-w-none">
+            <div class="prose prose-sm max-w-none prose-headings:text-gray-900 prose-p:text-gray-700 prose-strong:text-gray-900 prose-code:text-gray-800">
               <div
-                class="text-gray-700 whitespace-pre-line"
+                class="markdown-content"
                 v-html="formattedReport"
               ></div>
             </div>
@@ -82,85 +82,108 @@ export default {
 
     const formatReport = (text) => {
       if (!text) return "";
-
+      
+      // 인라인 마크다운 처리 함수 (볼드, 이탤릭 등)
+      const processInlineMarkdown = (line) => {
+        let processed = line;
+        // 볼드 처리 (**텍스트** 또는 __텍스트__)
+        processed = processed.replace(/\*\*([^*]+)\*\*/g, '<strong class="font-semibold text-gray-900">$1</strong>');
+        processed = processed.replace(/__([^_]+)__/g, '<strong class="font-semibold text-gray-900">$1</strong>');
+        // 이탤릭 처리 (*텍스트* 또는 _텍스트_)
+        processed = processed.replace(/\*([^*]+)\*/g, '<em class="italic">$1</em>');
+        processed = processed.replace(/_([^_]+)_/g, '<em class="italic">$1</em>');
+        // 코드 인라인 처리 (`코드`)
+        processed = processed.replace(/`([^`]+)`/g, '<code class="bg-gray-100 px-1.5 py-0.5 rounded text-sm font-mono text-gray-800">$1</code>');
+        return processed;
+      };
+      
       // 줄 단위로 분리
       const lines = text.split("\n");
       let formatted = "";
       let inList = false;
-
+      let listType = null; // 'ul' or 'ol'
+      
       lines.forEach((line) => {
         const trimmed = line.trim();
-
+        
         // 헤더 처리
         if (trimmed.startsWith("### ")) {
           if (inList) {
-            formatted += "</ul>";
+            formatted += listType === 'ul' ? "</ul>" : "</ol>";
             inList = false;
+            listType = null;
           }
-          formatted += `<h3 class="text-lg font-semibold text-gray-900 mb-3 mt-4">${trimmed.substring(
-            4
-          )}</h3>`;
+          const content = processInlineMarkdown(trimmed.substring(4));
+          formatted += `<h3 class="text-lg font-semibold text-gray-900 mb-3 mt-4 first:mt-0">${content}</h3>`;
         } else if (trimmed.startsWith("## ")) {
           if (inList) {
-            formatted += "</ul>";
+            formatted += listType === 'ul' ? "</ul>" : "</ol>";
             inList = false;
+            listType = null;
           }
-          formatted += `<h2 class="text-xl font-semibold text-gray-900 mb-3 mt-4">${trimmed.substring(
-            3
-          )}</h2>`;
+          const content = processInlineMarkdown(trimmed.substring(3));
+          formatted += `<h2 class="text-xl font-semibold text-gray-900 mb-3 mt-4 first:mt-0">${content}</h2>`;
         } else if (trimmed.startsWith("# ")) {
           if (inList) {
-            formatted += "</ul>";
+            formatted += listType === 'ul' ? "</ul>" : "</ol>";
             inList = false;
+            listType = null;
           }
-          formatted += `<h1 class="text-2xl font-semibold text-gray-900 mb-4 mt-4">${trimmed.substring(
-            2
-          )}</h1>`;
+          const content = processInlineMarkdown(trimmed.substring(2));
+          formatted += `<h1 class="text-2xl font-bold text-gray-900 mb-4 mt-4 first:mt-0">${content}</h1>`;
         }
-        // 리스트 처리
-        else if (trimmed.startsWith("- ")) {
-          if (!inList) {
-            formatted += '<ul class="list-disc ml-6 mb-3 space-y-1">';
+        // 리스트 처리 (-, *, •)
+        else if (trimmed.startsWith("- ") || trimmed.startsWith("* ") || trimmed.startsWith("• ")) {
+          if (!inList || listType !== 'ul') {
+            if (inList && listType === 'ol') {
+              formatted += "</ol>";
+            }
+            formatted += '<ul class="list-disc ml-6 mb-3 space-y-2 text-gray-700">';
             inList = true;
+            listType = 'ul';
           }
-          formatted += `<li>${trimmed.substring(2)}</li>`;
+          const content = processInlineMarkdown(trimmed.substring(2));
+          formatted += `<li class="leading-relaxed">${content}</li>`;
+        }
+        // 번호 리스트 처리
+        else if (/^\d+\.\s/.test(trimmed)) {
+          if (!inList || listType !== 'ol') {
+            if (inList && listType === 'ul') {
+              formatted += "</ul>";
+            }
+            formatted += '<ol class="list-decimal ml-6 mb-3 space-y-2 text-gray-700">';
+            inList = true;
+            listType = 'ol';
+          }
+          const content = processInlineMarkdown(trimmed.replace(/^\d+\.\s/, ""));
+          formatted += `<li class="leading-relaxed">${content}</li>`;
         }
         // 빈 줄 처리
         else if (trimmed === "") {
           if (inList) {
-            formatted += "</ul>";
+            formatted += listType === 'ul' ? "</ul>" : "</ol>";
             inList = false;
+            listType = null;
           }
           formatted += "<br>";
         }
         // 일반 텍스트 처리
         else {
           if (inList) {
-            formatted += "</ul>";
+            formatted += listType === 'ul' ? "</ul>" : "</ol>";
             inList = false;
+            listType = null;
           }
-          if (
-            formatted.endsWith("</h3>") ||
-            formatted.endsWith("</h2>") ||
-            formatted.endsWith("</h1>")
-          ) {
-            formatted += `<p class="mb-3 leading-relaxed">${trimmed}</p>`;
-          } else if (
-            !formatted.endsWith("</p>") &&
-            !formatted.endsWith("<br>")
-          ) {
-            formatted += `<p class="mb-3 leading-relaxed">${trimmed}</p>`;
-          } else {
-            formatted += `<p class="mb-3 leading-relaxed">${trimmed}</p>`;
-          }
+          const content = processInlineMarkdown(trimmed);
+          formatted += `<p class="mb-3 leading-relaxed text-gray-700">${content}</p>`;
         }
       });
-
+      
       // 마지막에 리스트가 열려있으면 닫기
       if (inList) {
-        formatted += "</ul>";
+        formatted += listType === 'ul' ? "</ul>" : "</ol>";
       }
-
+      
       return formatted;
     };
 
@@ -195,5 +218,81 @@ export default {
 .modal-enter-from .bg-white,
 .modal-leave-to .bg-white {
   transform: scale(0.9);
+}
+
+/* 마크다운 콘텐츠 스타일 */
+:deep(.markdown-content) {
+  line-height: 1.7;
+}
+
+:deep(.markdown-content h1) {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-top: 1.5rem;
+  margin-bottom: 1rem;
+  color: #111827;
+}
+
+:deep(.markdown-content h2) {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-top: 1.25rem;
+  margin-bottom: 0.75rem;
+  color: #111827;
+}
+
+:deep(.markdown-content h3) {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  color: #111827;
+}
+
+:deep(.markdown-content p) {
+  margin-bottom: 0.75rem;
+  line-height: 1.7;
+  color: #374151;
+}
+
+:deep(.markdown-content ul) {
+  margin-bottom: 0.75rem;
+  padding-left: 1.5rem;
+  list-style-type: disc;
+}
+
+:deep(.markdown-content ol) {
+  margin-bottom: 0.75rem;
+  padding-left: 1.5rem;
+  list-style-type: decimal;
+}
+
+:deep(.markdown-content li) {
+  margin-bottom: 0.5rem;
+  line-height: 1.7;
+}
+
+:deep(.markdown-content strong) {
+  font-weight: 600;
+  color: #111827;
+}
+
+:deep(.markdown-content em) {
+  font-style: italic;
+}
+
+:deep(.markdown-content code) {
+  background-color: #f3f4f6;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  color: #1f2937;
+}
+
+:deep(.markdown-content h1:first-child),
+:deep(.markdown-content h2:first-child),
+:deep(.markdown-content h3:first-child) {
+  margin-top: 0;
 }
 </style>
