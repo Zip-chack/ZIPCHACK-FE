@@ -25,6 +25,12 @@
           :radius="500"
         />
 
+        <!-- Description -->
+        <div class="card p-6">
+          <h2 class="text-xl font-bold text-gray-900 mb-4">상세 설명</h2>
+          <p class="text-gray-700 whitespace-pre-line">{{ listing.description || '상세 설명이 없습니다.' }}</p>
+        </div>
+
         <!-- Reviews Section -->
         <div class="card p-6">
           <div class="flex items-center justify-between mb-6">
