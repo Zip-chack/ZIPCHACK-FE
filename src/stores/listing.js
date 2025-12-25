@@ -59,6 +59,14 @@ export const useListingStore = defineStore("listing", () => {
     error.value = null;
     try {
       const response = await listingAPI.getListingById(id);
+      if (import.meta.env.DEV) {
+        console.log("[ListingStore] 매물 상세 데이터:", {
+          id: response.data.id,
+          title: response.data.title,
+          description: response.data.description,
+          hasDescription: !!response.data.description,
+        });
+      }
       currentListing.value = {
         ...response.data,
         is_favorite:
@@ -226,10 +234,17 @@ export const useListingStore = defineStore("listing", () => {
 
   // ID로 매물 찾기 (로컬 캐시에서)
   function getListingById(id) {
-    return (
-      listings.value.find((l) => l.id === Number.parseInt(id)) ||
-      currentListing.value
-    );
+    const parsedId = Number.parseInt(id);
+    // 먼저 listings 배열에서 찾기
+    const foundInList = listings.value.find((l) => l.id === parsedId);
+    if (foundInList) {
+      return foundInList;
+    }
+    // currentListing이 요청한 ID와 일치하는지 확인
+    if (currentListing.value && currentListing.value.id === parsedId) {
+      return currentListing.value;
+    }
+    return null;
   }
 
   return {

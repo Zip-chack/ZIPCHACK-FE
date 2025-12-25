@@ -26,9 +26,11 @@
         />
 
         <!-- Description -->
-        <div class="card p-6">
+        <div class="card p-6" v-if="listing">
           <h2 class="text-xl font-bold text-gray-900 mb-4">상세 설명</h2>
           <p class="text-gray-700 whitespace-pre-line">{{ listing.description || '상세 설명이 없습니다.' }}</p>
+          <!-- 디버깅용 -->
+
         </div>
 
         <!-- Reviews Section -->
@@ -141,6 +143,7 @@ const listingId = computed(() => route.params.id);
 const listing = computed(() => listingStore.getListingById(listingId.value));
 const reviews = ref([]);
 const showRoadview = ref(false);
+const isDev = import.meta.env.DEV;
 
 const isOwner = computed(() => {
   if (!authStore.user || !listing.value?.owner) {
